@@ -25,7 +25,7 @@ module cpu(
 	wire [3:0] operation;
 	wire [3:0] Rs1, Rs2, Rd, opc, cond;
 	wire [31:0] load_addr, store_addr;
-	wire [31:0] R[0:15];
+	//wire [31:0] R[0:15];
 	wire [31:0] pc, lr, sp;
 	wire [11:0] imm12;
 	wire [15:0] imm16;
@@ -43,10 +43,10 @@ module cpu(
 	reg z_reg;
 	reg n_reg;
 
-	assign R = irqmode ? Rr[1] : Rr[0];
-	assign pc = R[15];
-	assign lr = R[14];
-	assign sp = R[13];
+	//assign R = R[irqmode];
+	assign pc = Rr[irqmode][15];
+	assign lr = Rr[irqmode][14];
+	assign sp = Rr[irqmode][13];
 	assign opc = ir[31:28];
 	assign cond = dat_i[27:24];
 	assign Rd = ir[23:20];
@@ -58,12 +58,12 @@ module cpu(
 	assign imm16 = ir[15:0];
 	assign imm24 = ir[23:0];
 
-	assign load_addr = R[Rs1] + {16'h0000, imm16};
-	assign store_addr = R[Rd] + {16'h0000, imm16};
+	assign load_addr = Rr[irqmode][Rs1] + {16'h0000, imm16};
+	assign store_addr = Rr[irqmode][Rd] + {16'h0000, imm16};
 	assign ls_size = opc[1:0];
 
-	assign operand_a = R[Rs1];
-	assign operand_b = (opc == 4'b0000) ? R[Rs2] : {20'h00000, imm12};
+	assign operand_a = Rr[irqmode][Rs1];
+	assign operand_b = (opc == 4'b0000) ? Rr[irqmode][Rs2] : {20'h00000, imm12};
 
 	assign lt = n_reg & !z_reg;
 	assign gt = !n_reg & !z_reg;
@@ -178,7 +178,7 @@ module cpu(
 						end
 						4'b1000, 4'b1001, 4'b1010: begin
 							adr_o <= store_addr;
-							dat_o <= R[Rs1];
+							dat_o <= Rr[irqmode][Rs1];
 							we_o <= 1;
 							case (ls_size) // FIXME: Fix bus alignment
 								2'b00: sel_o <= 4'b0001;
@@ -192,24 +192,24 @@ module cpu(
 							end
 						end
 						4'b1100: begin
-							Rr[irqmode][15] <= pc + {{8{imm24[23]}}, imm24};
+							Rr[irqmode][15] <= pc + {{6{imm24[23]}}, imm24, 2'b00};
 							state <= ST_FETCH;
 						end
 						4'b1101: begin
-							if (R[Rd] != 32'b0) begin
+							if (Rr[irqmode][Rd] != 32'b0) begin
 								Rr[irqmode][15] <= pc + {{12{imm20[19]}}, imm20};
-								Rr[irqmode][Rd] <= R[Rd] - 1;
+								Rr[irqmode][Rd] <= Rr[irqmode][Rd] - 1;
 							end
 							state <= ST_FETCH;
 						end
 						4'b1110: begin
 							Rr[irqmode][14] <= next_pc;
-							Rr[irqmode][15] <= R[Rd] + {12'h000, imm20};
+							Rr[irqmode][15] <= Rr[irqmode][Rd] + {12'h000, imm20};
 							state <= ST_FETCH;
 						end
 						4'b1111: begin
 							case (Rd)
-								4'b0000: Rr[irqmode][15] <= R[14]; // RTS
+								4'b0000: Rr[irqmode][15] <= Rr[irqmode][14]; // RTS
 								4'b0001: irqmode <= 0; // RTI
 								default: begin
 								end
