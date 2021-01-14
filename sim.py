@@ -45,11 +45,12 @@ class CpuSim:
 		self.sim.send_to_gtkwave(self.sim.internals)
 		self.mem = [0x10008000] * 1024 # 1 kWord = 4 KiB memory full of NOP
 		m = self.mem
-		m[0] = 0x10000001
-		m[1] = 0x10000100
-		m[2] = 0x40100101
-		m[3] = 0x50200102
-		m[4] = 0x60300103
+		with open("firmware.hex", "r") as f:
+			adr = 0
+			for l in f.readlines():
+				h = l[:8]
+				m[adr] = int(h, 16)
+				adr += 1
 
 	def clock(self):
 		io = self.sim.io
