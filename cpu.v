@@ -115,12 +115,13 @@ module cpu(
 					z_reg <= 1;
 					n_reg <= 0;
 					stb_o <= 0;
+					next_pc <= 0;
 					state <= ST_FETCH;
 				end
 
 				ST_FETCH: begin
-					adr_o <= pc;
-					next_pc <= pc + 4;
+					adr_o <= next_pc;
+					Rr[irqmode][15] <= next_pc;
 					we_o <= 0;
 					sel_o <= 4'b1111;
 					stb_o <= 1;
@@ -132,7 +133,7 @@ module cpu(
 				ST_DECODE: begin
 					ir <= dat_i;
 					stb_o <= 0;
-					Rr[irqmode][15] <= next_pc;
+					next_pc <= pc + 4;
 					casez (cond)
 						4'b100?: state <= (z_reg == cond[0]) ? ST_EXECUTE : ST_FETCH;
 						4'b1110: state <= lt ? ST_EXECUTE : ST_FETCH;
@@ -196,24 +197,24 @@ module cpu(
 							end
 						end
 						4'b1100: begin
-							Rr[irqmode][15] <= pc + {{6{imm24[23]}}, imm24, 2'b00};
+							next_pc <= pc + {{6{imm24[23]}}, imm24, 2'b00};
 							state <= ST_FETCH;
 						end
 						4'b1101: begin
 							if (Rr[irqmode][Rd] != 32'b0) begin
-								Rr[irqmode][15] <= pc + {{12{imm20[19]}}, imm20};
+								next_pc <= pc + {{10{imm20[19]}}, imm20, 2'b00};
 								Rr[irqmode][Rd] <= Rr[irqmode][Rd] - 1;
 							end
 							state <= ST_FETCH;
 						end
 						4'b1110: begin
 							Rr[irqmode][14] <= next_pc;
-							Rr[irqmode][15] <= Rr[irqmode][Rd] + {12'h000, imm20};
+							next_pc <= Rr[irqmode][Rd] + {12'h000, imm20};
 							state <= ST_FETCH;
 						end
 						4'b1111: begin
 							case (Rd)
-								4'b0000: Rr[irqmode][15] <= Rr[irqmode][14]; // RTS
+								4'b0000: next_pc <= Rr[irqmode][14]; // RTS
 								4'b0001: irqmode <= 0; // RTI
 								default: begin
 								end
