@@ -14,8 +14,11 @@ ulx3s_out.config: cpuv2.json
 		--lpf ulx3s_v20.lpf \
 		--textcfg ulx3s_out.config
 
-cpuv2.json: cpuv2.ys top.v alu.v cpu.v
+cpuv2.json: cpuv2.ys top.v alu.v cpu.v firmware.hex
 	yosys cpuv2.ys
+
+firmware.hex: example.s
+	python3 assemble.py $< > $@
 
 prog: ulx3s.bit
 	fujprog ulx3s.bit
