@@ -1,0 +1,4 @@
+read_verilog top.v
+read_verilog cpu.v
+read_verilog alu.v
+synth_ecp5 -json cpuv2.json
