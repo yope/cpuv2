@@ -38,7 +38,7 @@ module alu (
 			8: // SHL
 				tmp = {arg_a, 1'b0};
 			9: // SHR
-				tmp = {arg_a[0], 1'b00, arg_a[31:1]};
+				tmp = {arg_a[0], 1'b0, arg_a[31:1]};
 			10: // ASL
 				tmp = {arg_a, c_in};
 			11: // ASR
