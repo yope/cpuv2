@@ -224,12 +224,15 @@ module cpu(
 
 				ST_LOAD: begin
 					stb_o <= 0;
-					state <= ST_FETCH;
+					if (!ack_i)
+						state <= ST_FETCH;
 				end
 
 				ST_STORE: begin
 					stb_o <= 0;
-					state <= ST_FETCH;
+					we_o <= 0;
+					if (!ack_i)
+						state <= ST_FETCH;
 				end
 
 				default: begin
