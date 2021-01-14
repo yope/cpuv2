@@ -161,6 +161,10 @@ module cpu(
 							Rr[irqmode][Rd] <= imm20[19] ? {12'hfff, imm20} : {12'h000, imm20};
 							state <= ST_FETCH;
 						end
+						4'b0111: begin
+							Rr[irqmode][Rd] <= {imm20, 12'h000};
+							state <= ST_FETCH;
+						end
 						4'b0100, 4'b0101, 4'b0110: begin
 							adr_o <= load_addr;
 							we_o <= 0;
