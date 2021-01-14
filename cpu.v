@@ -125,12 +125,12 @@ module cpu(
 					sel_o <= 4'b1111;
 					stb_o <= 1;
 					if (ack_i) begin
-						ir <= dat_i;
 						state <= ST_DECODE;
 					end
 				end
 
 				ST_DECODE: begin
+					ir <= dat_i;
 					stb_o <= 0;
 					Rr[irqmode][15] <= next_pc;
 					casez (cond)
