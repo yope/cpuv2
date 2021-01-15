@@ -3,7 +3,7 @@ import pyverilator
 
 class CpuSim:
 	def __init__(self):
-		self.sim = pyverilator.PyVerilator.build('top.v')
+		self.sim = pyverilator.PyVerilator.build('top.v', verilog_path=[".", "hdmi"])
 		self.sim.start_gtkwave()
 		self.sim.send_to_gtkwave(self.sim.internals)
 

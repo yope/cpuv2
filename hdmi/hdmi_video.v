@@ -46,7 +46,7 @@ module hdmi_video(
       .out_red(tmds[2]),
       .out_green(tmds[1]),
       .out_blue(tmds[0]),
-      .resetn(clk_locked),
+      .resetn(clk_locked)
     );
 
     // output TMDS SDR/DDR data to fake differential lanes

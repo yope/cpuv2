@@ -51,7 +51,7 @@ output wire [9:0] outp_blue,
 output wire [1:0] out_red,
 output wire [1:0] out_green,
 output wire [1:0] out_blue,
-output wire [1:0] out_clock,
+output wire [1:0] out_clock
 );
 
 parameter C_shift_clock_synchronizer=1'b1;
