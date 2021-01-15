@@ -10,6 +10,11 @@ delay_loop:
 	bne delay_loop
 	rts
 
+delay2:
+	ldi r11, 0x80000
+	bdec r11, 0
+	rts
+
 start:
 	ldiu r2, 0x01000
 loop:
@@ -18,5 +23,5 @@ loop:
 	jsr r0, delay
 	ldi r1, 0x55
 	stw r2, r1, 0
-	jsr r0, delay
+	jsr r0, delay2
 	b loop
