@@ -1,0 +1,6 @@
+cpu_tb
+cpuv2.json
+gtkwave.vcd
+obj_dir/
+ulx3s.bit
+ulx3s_out.config
