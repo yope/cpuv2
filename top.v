@@ -4,6 +4,7 @@ module top(
 	input clk_25mhz,
 	input [6:0] btn,
 	output [7:0] led,
+	output [3:0] gpdi_dp, // gpdi_dn,
 	output wifi_gpio0
 );
 	reg [31:0] ram[0:1023];
@@ -21,6 +22,7 @@ module top(
 	wire reset_cnt_stop;
 	wire [7:0] bnksel;
 	wire [9:0] raddr;
+	wire [3:0] unused_gpdi_dn;
 
 	initial $readmemh("firmware.hex", ram);
 
@@ -48,6 +50,12 @@ module top(
 		.adr_o(adr_o),
 		.dat_o(dat_o),
 		.sel_o(sel_o)
+	);
+
+	video video(
+		.clk_25mhz(clk_25mhz),
+		.gpdi_dp(gpdi_dp),
+		.gpdi_dn(unused_gpdi_dn)
 	);
 
 	always @(posedge clk_25mhz) begin
