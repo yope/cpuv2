@@ -23,6 +23,9 @@ module top(
 	wire [7:0] bnksel;
 	wire [9:0] raddr;
 	wire [3:0] unused_gpdi_dn;
+	wire video_stb;
+	wire [31:0] video_dat_o;
+	wire video_ack;
 
 	initial $readmemh("firmware.hex", ram);
 
@@ -39,6 +42,8 @@ module top(
 
 	assign led = led_reg;
 
+	assign video_stb = (bnksel == 8'h02) & stb_o;
+
 	cpu cpu(
 		.clk(clk_25mhz),
 		.rst_i(reset),
@@ -54,6 +59,13 @@ module top(
 
 	video video(
 		.clk_25mhz(clk_25mhz),
+		.adr_i(adr_o),
+		.dat_i(dat_o),
+		.sel_i(sel_o),
+		.we_i(we_o),
+		.stb_i(video_stb),
+		.ack_o(video_ack),
+		.dat_o(video_dat_o),
 		.gpdi_dp(gpdi_dp),
 		.gpdi_dn(unused_gpdi_dn)
 	);
@@ -91,7 +103,9 @@ module top(
 						dat_i[23:16] <= sel_o[2] ? ram[raddr][23:16] : 8'h00;
 						dat_i[31:24] <= sel_o[0] ? ram[raddr][31:24] : 8'h00;
 					end
-					default: dat_i <= 32'h00000000;
+					8'h02: dat_i <= video_dat_o;
+					default: begin
+					end
 				endcase
 			end
 		end
