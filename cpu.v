@@ -52,7 +52,7 @@ module cpu(
 	assign Rd = ir[23:20];
 	assign Rs1 = ir[19:16];
 	assign operation = ir[15:12];
-	assign Rs2 = ir[15:12];
+	assign Rs2 = ir[11:8];
 	assign imm12 = ir[11:0];
 	assign imm20 = ir[19:0];
 	assign imm16 = ir[15:0];
