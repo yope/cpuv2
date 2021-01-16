@@ -2,7 +2,7 @@
 
 all: ulx3s.bit
 
-.PHONY: clean
+.PHONY: clean prog sim
 clean:
 	rm -rf cpuv2.json ulx3s_out.config ulx3s.bit obj_dir firmware.hex
 
@@ -22,3 +22,6 @@ firmware.hex: example.s
 
 prog: ulx3s.bit
 	fujprog ulx3s.bit
+
+sim: top.v alu.v cpu.v video.v firmware.hex
+	python3 simtop.py
