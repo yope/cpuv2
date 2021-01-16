@@ -79,8 +79,11 @@ class Cpuv2Assembler:
 		if not len(ls):
 			return None
 		if l[0] == " " or l[0] == "\t":
-			# Expect opcode oper,... 
-			return self.parse_opcode(ls)
+			# Expect opcode oper,... or .cmd data
+			if ls[0] == ".":
+				return self.parse_cmd(ls)
+			else:
+				return self.parse_opcode(ls)
 		elif ls.endswith(":"):
 			# This is a label
 			self.labels[ls[:-1]] = self.pc
@@ -88,6 +91,29 @@ class Cpuv2Assembler:
 		print("Syntax error in line {}".format(self.lineno))
 		sys.exit(1)
 		return None # Never reached
+
+	def parse_cmd(self, cmd):
+		cmd, arg = cmd.split(" ", 1)
+		if cmd == ".STR" and arg[0] == '"':
+			s = eval(arg)
+			ret = []
+			d = 0
+			for i in range(len(s)):
+				bi = i & 3
+				d |= ord(s[i]) << (8 * bi)
+				if bi == 3:
+					ret.append(d)
+			if bi != 3:
+				ret.append(d)
+		elif cmd == ".STRW" and arg[0] == '"':
+			s = eval(arg)
+			ret = [ord(x) for x in s]
+		elif cmd == ".WORD":
+			ret = [int(arg, 0)]
+		else:
+			print("Command syntax error in line {}: {!r}".format(self.lineno, cmd))
+		self.pc += len(ret) * 4
+		return ret
 
 	def parse_cond(self, opc):
 		if len(opc) < 3:
