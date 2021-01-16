@@ -178,7 +178,6 @@ module cpu(
 							stb_o <= 1;
 							if (ack_i) begin
 								state <= ST_LOAD;
-								Rr[irqmode][Rd] <= dat_i;
 							end
 						end
 						4'b1000, 4'b1001, 4'b1010: begin
@@ -229,6 +228,7 @@ module cpu(
 
 				ST_LOAD: begin
 					stb_o <= 0;
+					Rr[irqmode][Rd] <= dat_i;
 					if (!ack_i)
 						state <= ST_FETCH;
 				end
