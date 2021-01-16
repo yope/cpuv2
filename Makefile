@@ -4,7 +4,7 @@ all: ulx3s.bit
 
 .PHONY: clean
 clean:
-	rm -rf cpuv2.json ulx3s_out.config ulx3s.bit
+	rm -rf cpuv2.json ulx3s_out.config ulx3s.bit obj_dir firmware.hex
 
 ulx3s.bit: ulx3s_out.config
 	ecppack ulx3s_out.config ulx3s.bit
