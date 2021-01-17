@@ -103,6 +103,7 @@ class Cpuv2Assembler:
 				d |= ord(s[i]) << (8 * bi)
 				if bi == 3:
 					ret.append(d)
+					d = 0
 			if bi != 3:
 				ret.append(d)
 		elif cmd == ".STRW" and arg[0] == '"':
