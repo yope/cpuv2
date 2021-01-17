@@ -1,6 +1,7 @@
 
 reset:
 	ldi r0, 0
+	ldi sp, 2047 # Stack at end of 2kB growing downwards
 	b start
 msg:
 	.STRW "Hello World!!\0"
@@ -50,9 +51,9 @@ print_loop:
 	ldw r12, r10, 0
 	addi r12, r12, 0
 	rtseq
-	addi r13, r14, 0
-	jsrne r0, ascii_conv
-	addi r14, r13, 0
+	stw sp, lr, 0 # push lr
+	jsr r0, ascii_conv
+	ldw lr, sp, 0 # pop lr
 	stb r11, r12, 0
 	addi r10, r10, 4
 	addi r11, r11, 1
