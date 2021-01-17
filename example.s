@@ -6,14 +6,13 @@ msg:
 	.STRW "Hello World!!\0"
 
 ascii_conv:
-	andi r7, r6, 0xe0
-	andi r8, r6, 0x1f
+	andi r7, r12, 0xe0
+	andi r12, r12, 0x1f
 	sr4i r7, r7, 0
 	shli r7, r7, 0
 	ldw r7, r7, conv_map
-	or r6, r7, r8
+	or r12, r7, r12
 	rts
-
 conv_map:
 	.WORD 0x00000080
 	.WORD 0x00000020
@@ -25,50 +24,51 @@ conv_map:
 	.WORD 0x00000060
 
 delay:
-	ldi r11, 0x80000
-delay_loop:
-	subi r11, r11, 1
-	bne delay_loop
-	rts
-
-delay2:
-	ldi r11, 0x80000
+	ldi r11, 0xa0000
 	bdec r11, 0
 	rts
 
-start:
-	ldiu r3, 0x02000
-	ldi r4, 0x12bf
-	ldi r5, 0x20
 clear:
-	addi r3, r3, 1
-	subi r4, r4, 1
-	stb r3, r5, 0
-	bne clear
-	ldiu r2, 0x01000
+	ldi r10, 0x20
+	ldi r12, 0x12bf
+	ldiu r11, 0x02000
+clear_loop:
+	stb r11, r10, 0
+	addi r11, r11, 1
+	bdec r12, clear_loop
+	rts
 
-start2:
-	ldiu r3, 0x02000
-	ldi r4, msg
-	ldi r5, 11
-msgloop:
-	ldw r6, r4, 0
-	addi r6, r6, 0
-	beq msgend
-	jsr r0, ascii_conv
-	stb r3, r6, 0
-	addi r3, r3, 1
-	addi r4, r4, 4
-	b msgloop
-msgend:
+print: # R8: x, R9: y, R10: pointer
+	sl4i r12, r9, 0
+	shli r11, r12, 0
+	shli r11, r11, 0
+	add r12, r12, r11
+	ldiu r11, 0x02000
+	add r11, r11, r12
+	add r11, r11, r8
+print_loop:
+	ldw r12, r10, 0
+	addi r12, r12, 0
+	rtseq
+	addi r13, r14, 0
+	jsrne r0, ascii_conv
+	addi r14, r13, 0
+	stb r11, r12, 0
+	addi r10, r10, 4
+	addi r11, r11, 1
+	b print_loop
 
+start:
+	jsr r0, clear
+	ldi r8, 1
+	ldi r9, 1
+	ldi r10, msg
+	jsr r0, print
+	ldi r8, 0
 loop:
-	ldi r1, 0xaa
-	stw r2, r1, 0
+	ldiu r2, 0x01000
+	stw r2, r8, 0
 	jsr r0, delay
-	ldi r1, 0x55
-	stw r2, r1, 0
-	jsr r0, delay2
 	ldiu r3, 0x02000
 	addi r3, r3, 415
 	ldi r4, 0xff
@@ -76,5 +76,28 @@ loop2:
 	stb r3, r4, 0
 	subi r3, r3, 1
 	subi r4, r4, 1
-	bne loop2
+	bge loop2
+	jsr r0, scroll
+	ldi r9, 59
+	ldi r10, msg
+	jsr r0, print
+	addi r8, r8, 1
+	subi r1, r8, 40
+	ldieq r8, 0
 	b loop
+
+scroll:
+	ldiu r3, 0x02000
+	ldi r4, 4720
+scroll_loop:
+	ldb r5, r3, 80
+	stb r3, r5, 0
+	addi r3, r3, 1
+	bdec r4, scroll_loop
+	ldi r4, 80
+	ldi r5, 0x20
+scroll_loop2:
+	stb r3, r5, 0
+	addi r3, r3, 1
+	bdec r4, scroll_loop2
+	rts
