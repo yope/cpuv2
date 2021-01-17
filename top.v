@@ -33,7 +33,7 @@ module top(
 	assign bnksel = adr_o[31:24];
 	assign raddr = adr_o[11:2];
 
-	assign ack_i = stb_o;
+	assign ack_i = (bnksel == 8'h02) ? video_ack : stb_o;
 
     // Tie GPIO0, keep board from rebooting
     assign wifi_gpio0 = 1'b1;
@@ -59,6 +59,7 @@ module top(
 
 	video video(
 		.clk_25mhz(clk_25mhz),
+		.rst_i(reset),
 		.adr_i(adr_o),
 		.dat_i(dat_o),
 		.sel_i(sel_o),
