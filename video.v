@@ -34,6 +34,24 @@ module video(
 	assign cgenaddr = {cidx, cy};
 	assign ack_o = stb_i;
 
+	function [7:0] f_datbi(input [1:0] seladr, input [31:0] dat);
+		case (seladr)
+			2'b00: f_datbi = dat[7:0];
+			2'b01: f_datbi = dat[15:8];
+			2'b10: f_datbi = dat[23:16];
+			2'b11: f_datbi = dat[31:24];
+		endcase
+	endfunction
+
+	function [31:0] f_datbo(input [1:0] seladr, input [7:0] dat);
+		case (seladr)
+			2'b00: f_datbo = {24'h000000, dat};
+			2'b01: f_datbo = {16'h0000, dat, 8'h00};
+			2'b10: f_datbo = {8'h00, dat, 16'h0000};
+			2'b11: f_datbo = {dat, 24'h000000};
+		endcase
+	endfunction
+
 	integer i;
 
 	initial begin
@@ -54,11 +72,11 @@ module video(
 
 	always @(posedge clk_25mhz) begin
 		if (stb_i) begin
-			if (we_i & sel_i[0]) begin
-				ram0[adr_i] <= dat_i[7:0];
-				ram1[adr_i] <= dat_i[7:0];
-			end else if (sel_i[0]) begin
-				dat_o[7:0] <= ram1[adr_i];
+			if (we_i) begin
+				ram0[adr_i] <= f_datbi(adr_i[1:0], dat_i);
+				ram1[adr_i] <= f_datbi(adr_i[1:0], dat_i);
+			end else begin
+				dat_o <= f_datbo(adr_i[1:0], ram1[adr_i]);
 			end
 		end
 	end

@@ -34,6 +34,8 @@ module cpu(
 	wire [1:0] ls_size;
 	wire z, c, n;
 	wire lt, gt, lte, gte;
+	wire [3:0] selbo, selbi, selho, selhi;
+	wire [31:0] datbo, datbi, datho, dathi;
 
 	reg [31:0] Rr[0:1][0:15];
 	reg irqmode;
@@ -69,6 +71,38 @@ module cpu(
 	assign gt = !n_reg & !z_reg;
 	assign lte = n_reg | z_reg;
 	assign gte = !n_reg | z_reg;
+
+	assign selbo = f_selb(store_addr[1:0]);
+	assign selbi = f_selb(load_addr[1:0]);
+	assign selho = store_addr[1] ? 4'b1100 : 4'b0011;
+	assign selhi = load_addr[1] ? 4'b1100 : 4'b0011;
+
+	function [3:0] f_selb(input [1:0] seladr);
+		case (seladr)
+			2'b00: f_selb = 4'b0001;
+			2'b01: f_selb = 4'b0010;
+			2'b10: f_selb = 4'b0100;
+			2'b11: f_selb = 4'b1000;
+		endcase
+	endfunction
+
+	function [31:0] f_datbi(input [1:0] seladr, input [31:0] dat);
+		case (seladr)
+			2'b00: f_datbi = {24'h000000, dat[7:0]};
+			2'b01: f_datbi = {24'h000000, dat[15:8]};
+			2'b10: f_datbi = {24'h000000, dat[23:16]};
+			2'b11: f_datbi = {24'h000000, dat[31:24]};
+		endcase
+	endfunction
+
+	function [31:0] f_datbo(input [1:0] seladr, input [31:0] dat);
+		case (seladr)
+			2'b00: f_datbo = {24'h000000, dat[7:0]};
+			2'b01: f_datbo = {16'h0000, dat[7:0], 8'h00};
+			2'b10: f_datbo = {8'h00, dat[7:0], 16'h0000};
+			2'b11: f_datbo = {dat[7:0], 24'h000000};
+		endcase
+	endfunction
 
 	alu alu(.clk(clk), .arg_a(operand_a), .arg_b(operand_b), .op(operation), .c_in(c_reg), .result(result), .z(z), .c(c), .n(n));
 
@@ -170,8 +204,8 @@ module cpu(
 							adr_o <= load_addr;
 							we_o <= 0;
 							case (ls_size) // FIXME: Fix bus alignment
-								2'b00: sel_o <= 4'b0001;
-								2'b01: sel_o <= 4'b0011;
+								2'b00: sel_o <= selbi;
+								2'b01: sel_o <= selhi;
 								2'b10: sel_o <= 4'b1111;
 								default: sel_o <= 4'b1111;
 							endcase
@@ -184,13 +218,12 @@ module cpu(
 						end
 						4'b1000, 4'b1001, 4'b1010: begin
 							adr_o <= store_addr;
-							dat_o <= Rr[irqmode][Rs1];
 							we_o <= 1;
 							case (ls_size) // FIXME: Fix bus alignment
-								2'b00: sel_o <= 4'b0001;
-								2'b01: sel_o <= 4'b0011;
-								2'b10: sel_o <= 4'b1111;
-								default: sel_o <= 4'b1111;
+								2'b00: begin sel_o <= selbo; dat_o <= f_datbo(store_addr, Rr[irqmode][Rs1]); end
+								2'b01: begin sel_o <= selho; dat_o <= store_addr[1] ? {Rr[irqmode][Rs1][15:0], 16'h0000} : {16'h0000, Rr[irqmode][Rs1][15:0]}; end
+								2'b10: begin sel_o <= 4'b1111; dat_o <= Rr[irqmode][Rs1]; end
+								default: begin sel_o <= 4'b1111; dat_o <= Rr[irqmode][Rs1]; end
 							endcase
 							stb_o <= 1;
 							if (ack_i) begin
@@ -232,7 +265,12 @@ module cpu(
 
 				ST_LOAD: begin
 					stb_o <= 0;
-					Rr[irqmode][Rd] <= dat_i;
+					case (ls_size)
+						2'b00: Rr[irqmode][Rd] <= f_datbi(load_addr[1:0], dat_i);
+						2'b01: Rr[irqmode][Rd] <= load_addr[1] ? {16'h0000, dat_i[31:16]} : {16'h0000, dat_i[15:0]};
+						2'b10: Rr[irqmode][Rd] <= dat_i;
+						default: Rr[irqmode][Rd] <= dat_i;
+					endcase
 					if (!ack_i)
 						state <= ST_FETCH;
 				end
