@@ -102,7 +102,7 @@ module top(
 						dat_i[7:0] <= sel_o[0] ? ram[raddr][7:0] : 8'h00;
 						dat_i[15:8] <= sel_o[1] ? ram[raddr][15:8] : 8'h00;
 						dat_i[23:16] <= sel_o[2] ? ram[raddr][23:16] : 8'h00;
-						dat_i[31:24] <= sel_o[0] ? ram[raddr][31:24] : 8'h00;
+						dat_i[31:24] <= sel_o[3] ? ram[raddr][31:24] : 8'h00;
 					end
 					8'h02: dat_i <= video_dat_o;
 					default: begin
