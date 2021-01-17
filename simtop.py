@@ -27,4 +27,4 @@ if __name__ == "__main__":
 	#alu = AluSim()
 	#alu.run()
 	cpu = CpuSim()
-	cpu.run(80)
+	cpu.run(180)
