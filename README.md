@@ -156,6 +156,22 @@ PC = LR
 Not yet implemented
 
 
+#### Condition codes
+
+Every instrucion can be executed conditionally if needed using common combinations of the
+ALU status bits C, Z and N, with are latched in the CPU and stay valid until the next ALU
+instrucion is executed. Currently neither load nor store instrucions affect these bits!
+
+ * 0xxx: Execute always. Assume 0000 and treat X as reserved, just in case.
+ * 1001: EQ (Equal). Execute only if the Z flag is set.
+ * 1000: NE (Not equal). Execute only if the Z flag is cleared
+ * 1110: LT (Less Than). Execute only of N == 1 and Z == 0.
+ * 1100: GT (Greater Than). Execute only if N == 0 and Z == 0.
+ * 1111: LE (Lessa than or Equal). Execute only if either N == 1 or Z == 1.
+ * 1101: GE (Greater than or Equal). Execute only if either N == 0 or Z == 1.
+ * 1011: CS (Carry Set). Execute only if C == 1.
+ * 1010: CC (Carry Clear). Execute only if C == 0.
+
 ### Video display interface
 
 The video controller currently has its own RAM buffer for a 80x60 character text display.
