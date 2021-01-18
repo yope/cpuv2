@@ -220,7 +220,7 @@ module cpu(
 							adr_o <= store_addr;
 							we_o <= 1;
 							case (ls_size) // FIXME: Fix bus alignment
-								2'b00: begin sel_o <= selbo; dat_o <= f_datbo(store_addr, Rr[irqmode][Rs1]); end
+								2'b00: begin sel_o <= selbo; dat_o <= f_datbo(store_addr[1:0], Rr[irqmode][Rs1]); end
 								2'b01: begin sel_o <= selho; dat_o <= store_addr[1] ? {Rr[irqmode][Rs1][15:0], 16'h0000} : {16'h0000, Rr[irqmode][Rs1][15:0]}; end
 								2'b10: begin sel_o <= 4'b1111; dat_o <= Rr[irqmode][Rs1]; end
 								default: begin sel_o <= 4'b1111; dat_o <= Rr[irqmode][Rs1]; end
