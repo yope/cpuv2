@@ -60,7 +60,7 @@ module top(
 	video video(
 		.clk_25mhz(clk_25mhz),
 		.rst_i(reset),
-		.adr_i(adr_o),
+		.adr_i(adr_o[13:0]),
 		.dat_i(dat_o),
 		.sel_i(sel_o),
 		.we_i(we_o),
