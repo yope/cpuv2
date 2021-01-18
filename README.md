@@ -135,16 +135,18 @@ Rd = (Rs1 + IMM16)
 
 ##### 12. Branch instruction (B): OPC, COND, IMM24
 
-PC = PC + IMM24 (sign extended)
+PC = PC + IMM24<<2 (sign extended)
 
 ##### 13. Decrement and Branch if not zero (BDEC): OPC, COND, Rd, IMM20
 
 Rd = Rd - 1
-if (Rd != 0) PC = PC + IMM20 (sign extended)
+
+if (Rd != 0) PC = PC + IMM20<<2 (sign extended)
 
 ##### 14. Jump to Sub Routine (JSR): OPC, COND, Rd, IMM20
 
 LR = PC + 4 (next instruction after this)
+
 PC = PC + Rd + IMM20 (sign extended)
 
 ##### 15.0. Return from Subroutine (RTS): OPC, COND, EXT=0, RESV(20-bit)
