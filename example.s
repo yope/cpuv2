@@ -25,16 +25,18 @@ conv_map:
 	.WORD 0x00000060
 
 delay:
-	ldi r11, 0xa0000
+	ldi r11, 0x30000
 	bdec r11, 0
 	rts
 
 clear:
 	ldi r10, 0x20
+	ldi r9, 0xc4
 	ldi r12, 0x12bf
 	ldiu r11, 0x02000
 clear_loop:
 	stb r11, r10, 0
+	stb r11, r9, 0x2000
 	addi r11, r11, 1
 	bdec r12, clear_loop
 	rts
@@ -70,15 +72,16 @@ loop:
 	ldiu r2, 0x01000
 	stw r2, r8, 0
 	jsr r0, delay
+	jsr r0, scroll
 	ldiu r3, 0x02000
 	addi r3, r3, 415
 	ldi r4, 0xff
 loop2:
 	stb r3, r4, 0
+	stb r3, r4, 0x2000
 	subi r3, r3, 1
 	subi r4, r4, 1
 	bge loop2
-	jsr r0, scroll
 	ldi r9, 59
 	ldi r10, msg
 	jsr r0, print
