@@ -25,13 +25,27 @@ conv_map:
 	.WORD 0x00000060
 
 delay:
-	ldi r11, 0x30000
+	ldi r11, 0x60000
 	bdec r11, 0
+	rts
+
+putc_uart: #R12: character
+	ldiu r9, 0x03000
+	stw r9, r12, 0
+	rts
+
+getc_uart:
+	ldiu r9, 0x03000
+	ldw r12, r9, 2 # Status register
+	andi r12, r12, 2 # Check RX full flag
+	ldiseq r12, 0xfff00 # No RX, return -256
+	rtseq
+	ldw r12, r9, 1 # RXD register
 	rts
 
 clear:
 	ldi r10, 0x20
-	ldi r9, 0xc4
+	ldi r9, 0x4c
 	ldi r12, 0x12bf
 	ldiu r11, 0x02000
 clear_loop:
@@ -73,8 +87,15 @@ loop:
 	stw r2, r8, 0
 	jsr r0, delay
 	jsr r0, scroll
+	addi r12, r8, 0x30
+	jsr r0, putc_uart
+	jsr r0, getc_uart
+	jsrne r0, ascii_conv
+
 	ldiu r3, 0x02000
 	addi r3, r3, 415
+	andi r12, r12, 0x00ff
+	stbne r3, r12, 3645
 	ldi r4, 0xff
 loop2:
 	stb r3, r4, 0
