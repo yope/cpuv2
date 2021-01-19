@@ -16,7 +16,7 @@ module video(
 	reg [7:0] colorram[0:4799];
 	reg [23:0] palette[0:15];
 	wire [23:0] color;
-	wire [9:0] x;
+	wire [9:0] x, xm1;
 	wire [9:0] y;
 	wire [8:0] cidx;
 	wire [2:0] cx;
@@ -29,11 +29,12 @@ module video(
 	reg [3:0] fgcidx, bgcidx;
 	reg [7:0] charcode;
 
-	assign col = x[9:3];
+	assign xm1 = (x - 1); // Adjust for register timing delay
+	assign col = xm1[9:3];
 	assign row = y[8:3];
 	assign ramidx = {row, 6'b000000} + {2'b00, row, 4'b0000} + {5'b00000, col};
 	assign cidx = {1'b1, charcode};
-	assign cx = 7 - x[2:0];
+	assign cx = 7 - xm1[2:0];
 	assign cy = y[2:0];
 	assign cgenaddr = {cidx, cy};
 	assign ack_o = stb_i;
