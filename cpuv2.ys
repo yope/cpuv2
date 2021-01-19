@@ -2,5 +2,6 @@ read_verilog top.v
 read_verilog cpu.v
 read_verilog alu.v
 read_verilog video.v
+read_verilog uart.v
 read_verilog hdmi/clk_25_250_125_25.v hdmi/fake_differential.v hdmi/hdmi_video.v hdmi/pll.v hdmi/tmds_encoder.v hdmi/vga2dvid.v hdmi/vga_video.v
 synth_ecp5 -json cpuv2.json

@@ -3,8 +3,10 @@
 module top(
 	input clk_25mhz,
 	input [6:0] btn,
+	input ftdi_txd,
 	output [7:0] led,
 	output [3:0] gpdi_dp, // gpdi_dn,
+	output ftdi_rxd,
 	output wifi_gpio0
 );
 	reg [31:0] ram[0:1023];
@@ -23,9 +25,9 @@ module top(
 	wire [7:0] bnksel;
 	wire [9:0] raddr;
 	wire [3:0] unused_gpdi_dn;
-	wire video_stb;
-	wire [31:0] video_dat_o;
-	wire video_ack;
+	wire video_stb, uart_stb;
+	wire [31:0] video_dat_o, uart_dat_o;
+	wire video_ack, uart_ack;
 
 	initial $readmemh("firmware.hex", ram);
 
@@ -33,7 +35,7 @@ module top(
 	assign bnksel = adr_o[31:24];
 	assign raddr = adr_o[11:2];
 
-	assign ack_i = (bnksel == 8'h02) ? video_ack : stb_o;
+	assign ack_i = (bnksel == 8'h02) ? video_ack : (bnksel == 8'h03) ? uart_ack : stb_o;
 
     // Tie GPIO0, keep board from rebooting
     assign wifi_gpio0 = 1'b1;
@@ -43,6 +45,7 @@ module top(
 	assign led = led_reg;
 
 	assign video_stb = (bnksel == 8'h02) & stb_o;
+	assign uart_stb = (bnksel == 8'h03) & stb_o;
 
 	cpu cpu(
 		.clk(clk_25mhz),
@@ -69,6 +72,20 @@ module top(
 		.dat_o(video_dat_o),
 		.gpdi_dp(gpdi_dp),
 		.gpdi_dn(unused_gpdi_dn)
+	);
+
+	uart uart(
+		.clk(clk_25mhz),
+		.rst_i(reset),
+		.adr_i(adr_o[1:0]),
+		.dat_i(dat_o),
+		.sel_i(sel_o),
+		.we_i(we_o),
+		.stb_i(uart_stb),
+		.ack_o(uart_ack),
+		.dat_o(uart_dat_o),
+		.rxd(ftdi_txd),
+		.txd(ftdi_rxd)
 	);
 
 	always @(posedge clk_25mhz) begin
@@ -105,6 +122,7 @@ module top(
 						dat_i[31:24] <= sel_o[3] ? ram[raddr][31:24] : 8'h00;
 					end
 					8'h02: dat_i <= video_dat_o;
+					8'h03: dat_i <= uart_dat_o;
 					default: begin
 					end
 				endcase
