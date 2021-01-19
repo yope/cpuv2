@@ -40,7 +40,7 @@ load or store. The bus is 32-bit wide, and all instrucions are also 32-bit wide 
 
 The ALU of this CPU is extremely simple and does not require a clock. It is purely combinatorial.
 It has two 32-bit input ports for operands A and B, a carry input port, a 32-bit result port, 
-a 4-bit operation port, as well as 3 1-bit outputs for carru (C), zero (Z) and negative (N). It
+a 4-bit operation port, as well as 3 1-bit outputs for carry (C), zero (Z) and negative (N). It
 supports the following operations:
 
 NOTE: All operations will affect the outputs of C, Z and N.
@@ -64,7 +64,7 @@ NOTE: All operations will affect the outputs of C, Z and N.
 
 The last 4 operations are basically meant to implement other fixed amounts of shifts in as little
 instructions (cycles) as possible. This also aids multiplication and division routines. SL16/SR16
-als server as half-word swaps.
+als serve as half-word swaps.
 
 #### Instructions
 
@@ -178,6 +178,24 @@ instrucion is executed. Currently neither load nor store instrucions affect thes
 
 The video controller currently has its own RAM buffer for a 80x60 character text display.
 This is displayed on a monitor connected to the HDMI port, at 640x480 pixel resolution.
-A font is incorporated (in chargen.hex) with fixed with 8x8 pixel characters.
+A font is incorporated (in chargen.hex) with fixed width 8x8 pixel characters.
 Video (text) RAM is only byte-addressable right now for simplicity.
+The color information for background and foreground color of each character cell is stored
+in the colorram buffer and uses a fixed palette of 16 colors. Each byte of colorram contains
+the foreground color index in the 4 LSBs and the background color index in the 4 MSBs.
+
+### SoC memory map
+
+The memory map will probably change a lot still, and this documentation might often be out
+of date.
+
+The slightly wishbone compatible bus connects the CPU core to the main RAM memory, the
+LED array output register and the video controller memories. The 8 MSBs of the address bus
+are used as "bank selection", and select to which module the access is directed.
+
+ * 0x00000000-0x00000fff: 4 KiB unified program and data memory.
+ * 0x01000000-0x01ffffff: Output LED array. Single 8-bit write-only reguster aliased over the
+ whole address space.
+ * 0x02000000-0x020012bf: Video controller text screen buffer RAM. Only byte-addressable.
+ * 0x02002000-0x020032bf: Video controller color screen buffer RAM. Only byte-addressable.
 
