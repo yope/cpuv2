@@ -65,12 +65,12 @@ module video(
 		$readmemh("chargen.hex", chargen);
 		palette[0] = 24'h000000;
 		palette[1] = 24'hffffff;
-		palette[2] = 24'hff0000;
-		palette[3] = 24'h00ff00;
-		palette[4] = 24'h0000ff;
-		palette[5] = 24'hffff00;
-		palette[6] = 24'h00ffff;
-		palette[7] = 24'hff00ff;
+		palette[2] = 24'hcc0000;
+		palette[3] = 24'h00cc00;
+		palette[4] = 24'h0000cc;
+		palette[5] = 24'hcccc00;
+		palette[6] = 24'h00cccc;
+		palette[7] = 24'hcc00cc;
 		palette[8] = 24'h888888;
 		palette[9] = 24'hcccccc;
 		palette[10] = 24'hff8888;
