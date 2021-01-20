@@ -118,11 +118,14 @@ class Cpuv2Assembler:
 
 	def parse_cond(self, opc):
 		if len(opc) < 3:
-			return opc, 0
-		cond = self.condcodes.get(opc[-2:], 0)
-		if cond:
+			return opc, 0, ""
+		cond = opc[-2:]
+		condn = self.condcodes.get(cond, 0)
+		if condn:
 			opc = opc[:-2]
-		return opc, cond
+		else:
+			cond = ""
+		return opc, condn, cond
 
 	def instr(self, *args):
 		shf = 28
@@ -176,7 +179,12 @@ class Cpuv2Assembler:
 		else:
 			opc = l
 			rest = ""
-		opc, condn = self.parse_cond(opc)
+		opc, condn, cond = self.parse_cond(opc)
+		# First check for aliases
+		if opc == "pop":
+			return self.parse_opcode("ldw{} {}, sp, 4".format(cond, rest))
+		elif opc == "push":
+			return self.parse_opcode("stw{} sp, {}, 0".format(cond, rest))
 		if opc in self.alucodes:
 			opcn = 0
 			alun = self.alucodes[opc]
