@@ -17,7 +17,7 @@ ulx3s_out.config: cpuv2.json
 cpuv2.json: cpuv2.ys top.v alu.v cpu.v video.v uart.v firmware.hex
 	yosys cpuv2.ys
 
-firmware.hex: example.s
+firmware.hex: monitor.s
 	python3 assemble.py $< > $@
 
 prog: ulx3s.bit

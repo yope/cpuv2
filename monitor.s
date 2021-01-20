@@ -1,0 +1,207 @@
+
+
+# Monitor program
+#
+# Register usage:
+# r0: 0, zero, null, zip, nada
+# r1...r4: Scratch registers. Clobbered by subroutine
+# r5...r8: Working registers. Never clobbered
+# r9...r12: Arguments passed to subroutine, return values from subroutine
+#
+# Subroutines:
+# No need to push/pop lr if it doesn't call any other subroutine within.
+#
+
+reset:
+	ldi r0, 0
+	ldi sp, 0xffc
+	ldi r1, bss_end
+	subi r2, r1, bss
+	shri r2, r2, 0
+	shri r2, r2, 0
+	subi r2, r2, 1
+bss_copy_loop:
+	subi r1, r1, 4
+	stw r1, r0, 0
+	bdec r2, bss_copy_loop
+	b main
+
+# Global variables
+bss:
+v_cursor_x:
+	.WORD 0
+v_cursor_y:
+	.WORD 0
+v_blink_count:
+	.WORD 0
+v_blink_flag:
+	.WORD 0
+
+bss_end:
+
+ascii_conv:
+	andi r1, r9, 0xe0
+	andi r9, r9, 0x1f
+	sr4i r1, r1, 0
+	shli r1, r1, 0
+	ldw r1, r1, conv_map
+	or r9, r1, r9
+	rts
+conv_map:
+	.WORD 0x00000080
+	.WORD 0x00000020
+	.WORD 0x00000040
+	.WORD 0x00000000
+	.WORD 0x000000C0
+	.WORD 0x00000060
+	.WORD 0x00000040
+	.WORD 0x00000060
+
+putc_uart:
+	ldiu r1, 0x03000
+	stw r1, r9, 0
+	rts
+
+getc_uart:
+	ldiu r1, 0x03000
+	ldw r9, r1, 8 # Status register
+	andi r9, r9, 2 # Check RX full flag
+	ldiseq r9, 0xfff00 # No RX, return -256
+	rtseq
+	ldw r9, r1, 4 # RXD register
+	rts
+
+get_cursor_address:
+	# Return r9 = x, r10 = y and r11 = address in screen RAM
+	ldw r10, r0, v_cursor_y	# r10 = cursor_y
+	sl4i r11, r10, 0
+	ori r9, r11, 0
+	shli r11, r11, 0
+	shli r11, r11, 0
+	add r11, r11, r9		# r11 = cursor_y * 80
+	ldw r9, r0, v_cursor_x	# r9 = cursor_x
+	add r1, r11, r9			# Add to r11
+	ldiu r11, 0x02000
+	add r11, r11, r1		# Add screen RAM offset
+	rts
+
+putc_screen:
+	push lr
+	push r9
+	jsr r0, cursor_blink_off # Turn off cursor
+	pop r9
+	subi r1, r9, 10		# Check for '\n'
+	subine r1, r9, 13	# Check for '\r'
+	bne putc_screen_1
+	ldi r1, 0			# Set new cursor_x = 0
+	stw r0, r1, v_cursor_x
+	ldw r10, r0, v_cursor_y
+	ori r0, r0, 0		# Set Z flag
+	b putc_screen_nl	# Goto next line
+putc_screen_1:
+	subi r1, r9, 8		# Check back-space
+	subine r1, r9, 0x7f	# Check DEL
+	bne putc_screen_2
+	ldw r1, r0, v_cursor_x
+	ori r1, r1, 0		# Check if zero
+	subine r1, r1, 1	# Go back one position if not
+	stw r0, r1, v_cursor_x
+	pop lr				# And we are done.
+	rts
+putc_screen_2:
+	subi r1, r9, 12		# Check for FF (clear screen)
+	bne putc_screen_3
+	stw r0, r0, v_cursor_x # If equal, home the cursor,...
+	stw r0, r0, v_cursor_y
+	pop lr				# ..., pop lr and
+	b clear				# jump to clear routine
+putc_screen_3:
+	jsr r0, ascii_conv
+	push r9				# Save r9 on stack
+	jsr r0, get_cursor_address
+	pop r1				# pop character in r1 (former r9)
+	stb r11, r1, 0		# Store character to screen
+	addi r9, r9, 1
+	subi r3, r9, 80		# Is cursor past end of line
+	stwge r0, r3, v_cursor_x # Sore new position
+	stwlt r0, r9, v_cursor_x # Or stor old position + 1
+putc_screen_nl:
+	addige r10, r10, 1	# Goto next line if needed
+	subi r2, r10, 60	# Is cursor past end of screen
+	ldige r10, 59		# then place cursor on last line...
+	stw r0, r10, v_cursor_y
+	jsrge r0, scroll	# and scroll up.
+	pop lr
+	rts
+
+scroll:
+	ldiu r1, 0x02000
+	ldi r2, 4720
+scroll_loop:
+	ldb r3, r1, 80
+	stb r1, r3, 0
+	addi r1, r1, 1
+	bdec r2, scroll_loop
+	ldi r2, 80
+	ldi r3, 0x20
+scroll_loop2:
+	stb r1, r3, 0
+	addi r1, r1, 1
+	bdec r2, scroll_loop2
+	rts
+
+cursor_blink:
+	ldw r1, r0, v_blink_count
+	addi r1, r1, 1
+	ldi r2, 0x20000
+	sub r2, r1, r2
+	stwge r0, r0, v_blink_count
+	stwlt r0, r1, v_blink_count
+	ldi r2, 0x10000
+	and r2, r1, r2
+	beq cursor_blink_off
+cursor_blink_on:
+	ldw r1, r0, v_blink_flag
+	ori r1, r1, 0			# Check if set
+	rtsne					# Already set? -> return
+	ldi r5, 1				# New flag value 1
+cursor_blink_invert:
+	push lr
+	jsr r0, get_cursor_address
+	pop lr
+	ldb r1, r11, 0			# Get character at cursor
+	xori r1, r1, 0x80		# Invert MSB
+	stb r11, r1, 0			# And store it back
+	stw r0, r5, v_blink_flag # Store new flag value
+	rts
+cursor_blink_off:
+	ldw r1, r0, v_blink_flag
+	ori r1, r1, 0			# Check if set
+	ldine r5, 0				# New flag value 0
+	bne cursor_blink_invert	# Set, then invert character and clear
+	rts
+
+clear:
+	ldi r1, 0x20 # Space character
+	ldi r2, 0x4c # Blue background, light blue foreground
+	ldi r3, 0x12bf
+	ldiu r4, 0x02000
+clear_loop:
+	stb r4, r1, 0
+	stb r4, r2, 0x2000
+	addi r4, r4, 1
+	bdec r3, clear_loop
+	rts
+
+main:
+	jsr r0, clear
+	ldi r9, 0x41
+	jsr r0, putc_screen
+main_loop:
+	jsr r0, cursor_blink
+	jsr r0, getc_uart
+	ldiu r1, 0x01000
+	ori r9, r9, 0	# Check sign
+	stbgt r1, r9, 0	# Debug uart RX reg
+	jsrgt r0, putc_screen
+	b main_loop
