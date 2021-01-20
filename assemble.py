@@ -74,7 +74,7 @@ class Cpuv2Assembler:
 		if not len(l):
 			return None
 		if "#" in l:
-			l, _ = l.split("#") # Remove comments
+			l, _ = l.split("#", 1) # Remove comments
 		ls = l.strip() # Make a line without leading or ending spaces
 		if not len(ls):
 			return None
