@@ -32,7 +32,7 @@ module uart(
 			regs[0] <= 32'h00000065; // TX data
 			regs[1] <= 32'h00000000; // RX data
 			regs[2] <= 32'h00000001; // Status
-			regs[3] <= 32'h00000018; // divider
+			regs[3] <= 32'h000000d7; // divider
 			rxclkcount <= 32'h00000000;
 			txclkcount <= 32'h00000000;
 			rxbitcount <= 4'b0000;
