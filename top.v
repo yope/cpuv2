@@ -77,7 +77,7 @@ module top(
 	uart uart(
 		.clk(clk_25mhz),
 		.rst_i(reset),
-		.adr_i(adr_o[1:0]),
+		.adr_i(adr_o[3:0]),
 		.dat_i(dat_o),
 		.sel_i(sel_o),
 		.we_i(we_o),
