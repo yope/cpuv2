@@ -69,7 +69,7 @@ print_loop:
 	rtseq
 	stw sp, lr, 0 # push lr
 	jsr r0, ascii_conv
-	ldw lr, sp, 0 # pop lr
+	ldw lr, sp, 4 # pop lr
 	stb r11, r12, 0
 	addi r10, r10, 1
 	addi r11, r11, 1
