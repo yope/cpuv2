@@ -137,16 +137,20 @@ class Cpuv2Assembler:
 	def parse_imm(self, arg, bitlen, bmode=False):
 		msk = (1 << bitlen) - 1
 		if arg[0] in "0123456789-":
-			ret = int(arg, 0) & msk
+			ret = int(arg, 0)
 		elif arg in self.labels:
-			ret = self.labels[arg] & msk
+			ret = self.labels[arg]
 			if bmode:
-				ret = ((ret - self.pc) >> 2) & msk
+				ret = ((ret - self.pc) >> 2)
 		elif self.stage == 0:
 			ret = 0 # Probably a label that will get filled soon
 		else:
 			print("Unrecongized imm, error in line {}: {!r}".format(self.lineno, arg))
 			sys.exit(3)
+		if abs(ret & msk) < abs(ret):
+			print("Immediate argument out of range, error in line {}".format(self.lineno))
+			sys.exit(7)
+		ret = ret & msk
 		return ret
 
 	def parse_reg(self, arg):
