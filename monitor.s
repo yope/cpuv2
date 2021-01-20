@@ -134,6 +134,82 @@ putc_screen_nl:
 	pop lr
 	rts
 
+puts_screen:
+	push lr
+	push r8
+	ori r8, r9, 0		# Store pointer in r8
+puts_screen_loop:
+	ldb r9, r8, 0		# Load next char from string
+	ori r9, r9, 0		# Set flags
+	beq puts_screen_end # If it is 0, finish
+	jsr r0, putc_screen	# Otherwise print it
+	addi r8, r8, 1		# Increment pointer
+	b puts_screen_loop
+puts_screen_end:
+	addi r9, r8, 1		# return address after \0
+	pop r8
+	pop lr
+	rts
+
+printsi: # Print screen immediate
+	push r8
+	ori r9, lr, 0		# Get lr, which points to the string
+	jsr r0, puts_screen	# puts returns address after \0 in r9
+	pop r8				# Restore r8
+	andi r1, r9, 3		# Align r9 to 32 bits
+	beq printsi_end		# Already aligned? Exit...
+	xorine r1, r1, 3		# Do alignment
+	add r9, r9, r1
+	addine r9, r9, 1
+printsi_end:
+	ori lr, r9, 0		# save new lr as return address
+	rts					# Return there
+
+printhex4:
+	push lr
+	push r9
+printhex4_pushed:
+	andi r9, r9, 0x0f
+	ldb r9, r9, printhex4_table
+	jsr r0, putc_screen
+	pop r9
+	pop lr
+	rts
+printhex4_table:
+	.STR "0123456789abcdef"
+
+printhex8:
+	push lr
+	push r9
+	sr4i r9, r9, 0
+	andi r9, r9, 0x0f
+	ldb r9, r9, printhex4_table
+	jsr r0, putc_screen
+	pop r9
+	push r9
+	b printhex4_pushed
+
+printhex16:
+	push lr
+	push r9
+	sr4i r9, r9, 0
+	sr4i r9, r9, 0
+	jsr r0, printhex8
+	pop r9
+	jsr r0, printhex8
+	pop lr
+	rts
+
+printhex32:
+	push lr
+	push r9
+	sr16i r9, r9, 0
+	jsr r0, printhex16
+	pop r9
+	jsr r0, printhex16
+	pop lr
+	rts
+
 scroll:
 	ldiu r1, 0x02000
 	ldi r2, 4720
@@ -195,13 +271,28 @@ clear_loop:
 
 main:
 	jsr r0, clear
-	ldi r9, 0x41
+	ldi r9, 10 # cr
 	jsr r0, putc_screen
 main_loop:
 	jsr r0, cursor_blink
 	jsr r0, getc_uart
-	ldiu r1, 0x01000
 	ori r9, r9, 0	# Check sign
-	stbgt r1, r9, 0	# Debug uart RX reg
-	jsrgt r0, putc_screen
+	blt main_loop   # No char? Try again
+	ldiu r1, 0x01000
+	stb r1, r9, 0	# Debug uart RX reg
+	jsr r0, putc_screen
+	ldw r5, r0, v_cursor_x
+	ldw r6, r0, v_cursor_y
+	stw r0, r0, v_cursor_x
+	stw r0, r0, v_cursor_y
+	jsr r0, printsi
+	.STR "Terminal screen line: "
+	ori r9, r6, 0
+	jsr r0, printhex32
+	jsr r0, printsi
+	.STR " column: "
+	ori r9, r5, 0
+	jsr r0, printhex32
+	stw r0, r5, v_cursor_x
+	stw r0, r6, v_cursor_y
 	b main_loop
