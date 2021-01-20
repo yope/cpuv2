@@ -212,7 +212,7 @@ module cpu(
 							stb_o <= 1;
 							if (ack_i) begin
 								if (Rs1 == 4'b1101) // R13 == Stack pointer
-									Rr[irqmode][13] <= Rr[irqmode][13] + 1; // POP
+									Rr[irqmode][13] <= Rr[irqmode][13] + 4; // POP
 								state <= ST_LOAD;
 							end
 						end
@@ -228,7 +228,7 @@ module cpu(
 							stb_o <= 1;
 							if (ack_i) begin
 								if (Rd == 4'b1101) // R13 == Stack pointer
-									Rr[irqmode][13] <= Rr[irqmode][13] - 1; // PUSH
+									Rr[irqmode][13] <= Rr[irqmode][13] - 4; // PUSH
 								state <= ST_STORE;
 							end
 						end
