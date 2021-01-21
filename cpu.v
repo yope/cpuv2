@@ -271,15 +271,13 @@ module cpu(
 						2'b10: Rr[irqmode][Rd] <= dat_i;
 						default: Rr[irqmode][Rd] <= dat_i;
 					endcase
-					if (!ack_i)
-						state <= ST_FETCH;
+					state <= ST_FETCH;
 				end
 
 				ST_STORE: begin
 					stb_o <= 0;
 					we_o <= 0;
-					if (!ack_i)
-						state <= ST_FETCH;
+					state <= ST_FETCH;
 				end
 
 				default: begin

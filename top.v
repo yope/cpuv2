@@ -11,10 +11,11 @@ module top(
 );
 	reg [31:0] ram[0:1023];
 	reg [3:0] reset_cnt = 0;
+	reg [31:0] ramdat_o;
 	reg reset;
-	reg [31:0] dat_i;
 	reg [7:0] led_reg;
 	wire ack_i;
+	wire [31:0] dat_i;
 	wire [31:0] dat_o;
 	wire [31:0] adr_o;
 	wire [3:0] sel_o;
@@ -36,6 +37,7 @@ module top(
 	assign raddr = adr_o[11:2];
 
 	assign ack_i = (bnksel == 8'h02) ? video_ack : (bnksel == 8'h03) ? uart_ack : stb_o;
+	assign dat_i = (bnksel == 8'h02) ? video_dat_o : (bnksel == 8'h03) ? uart_dat_o : ramdat_o;
 
     // Tie GPIO0, keep board from rebooting
     assign wifi_gpio0 = 1'b1;
@@ -116,13 +118,11 @@ module top(
 			end else begin
 				case (bnksel)
 					8'h00: begin
-						dat_i[7:0] <= sel_o[0] ? ram[raddr][7:0] : 8'h00;
-						dat_i[15:8] <= sel_o[1] ? ram[raddr][15:8] : 8'h00;
-						dat_i[23:16] <= sel_o[2] ? ram[raddr][23:16] : 8'h00;
-						dat_i[31:24] <= sel_o[3] ? ram[raddr][31:24] : 8'h00;
+						ramdat_o[7:0] <= sel_o[0] ? ram[raddr][7:0] : 8'h00;
+						ramdat_o[15:8] <= sel_o[1] ? ram[raddr][15:8] : 8'h00;
+						ramdat_o[23:16] <= sel_o[2] ? ram[raddr][23:16] : 8'h00;
+						ramdat_o[31:24] <= sel_o[3] ? ram[raddr][31:24] : 8'h00;
 					end
-					8'h02: dat_i <= video_dat_o;
-					8'h03: dat_i <= uart_dat_o;
 					default: begin
 					end
 				endcase
