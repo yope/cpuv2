@@ -203,7 +203,7 @@ module cpu(
 						4'b0100, 4'b0101, 4'b0110: begin
 							adr_o <= load_addr;
 							we_o <= 0;
-							case (ls_size) // FIXME: Fix bus alignment
+							case (ls_size)
 								2'b00: sel_o <= selbi;
 								2'b01: sel_o <= selhi;
 								2'b10: sel_o <= 4'b1111;
@@ -219,7 +219,7 @@ module cpu(
 						4'b1000, 4'b1001, 4'b1010: begin
 							adr_o <= store_addr;
 							we_o <= 1;
-							case (ls_size) // FIXME: Fix bus alignment
+							case (ls_size)
 								2'b00: begin sel_o <= selbo; dat_o <= f_datbo(store_addr[1:0], Rr[irqmode][Rs1]); end
 								2'b01: begin sel_o <= selho; dat_o <= store_addr[1] ? {Rr[irqmode][Rs1][15:0], 16'h0000} : {16'h0000, Rr[irqmode][Rs1][15:0]}; end
 								2'b10: begin sel_o <= 4'b1111; dat_o <= Rr[irqmode][Rs1]; end
