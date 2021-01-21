@@ -29,16 +29,16 @@ module uart(
 		if (rst_i) begin
 			rxstate <= 3'b000;
 			txstate <= 3'b000;
-			regs[0] <= 32'h00000065; // TX data
+			regs[0] <= 32'h00000000; // TX data
 			regs[1] <= 32'h00000000; // RX data
-			regs[2] <= 32'h00000001; // Status
+			regs[2] <= 32'h00000000; // Status
 			regs[3] <= 32'h000000d7; // divider
 			rxclkcount <= 32'h00000000;
 			txclkcount <= 32'h00000000;
 			rxbitcount <= 4'b0000;
 			txbitcount <= 4'b0000;
-			rxshiftreg <= 10'b0000000000;
-			txshiftreg <= 10'b0000000000;
+			rxshiftreg <= 10'b1111111111;
+			txshiftreg <= 10'b1111111111;
 			rxfill <= 7'b0000000;
 			rxempty <= 7'b0000000;
 			rxstart <= 0;
@@ -72,14 +72,14 @@ module uart(
 			regs[2][1] <= (rxempty != rxfill);
 
 			// TXD state machine
-			if (txclkcount == regs[3]) begin
-				txclkcount <= 32'h00000000;
-				if (txstart) begin
+			if (txstart) begin
+				if (txclkcount >= regs[3]) begin
+					txclkcount <= 32'h00000000;
 					txbitcount <= txbitcount + 1;
 					txshiftreg <= {1'b1, txshiftreg[9:1]};
+				end else begin
+					txclkcount <= txclkcount + 1;
 				end
-			end else begin
-				txclkcount <= txclkcount + 1;
 			end
 			case (txstate)
 				3'b000: begin
@@ -105,7 +105,7 @@ module uart(
 			endcase
 
 			// RXD state machine
-			if (rxclkcount == regs[3]) begin
+			if (rxclkcount >= regs[3]) begin
 				rxclkcount <= 32'h00000000;
 				if (rxstart) begin
 					// Sample point
