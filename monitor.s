@@ -24,6 +24,8 @@ bss_copy_loop:
 	subi r1, r1, 4
 	stw r1, r0, 0
 	bdec r2, bss_copy_loop
+	ldi r1, 0x4c	# Default color code
+	stw r0, r1, v_color
 	b main
 
 # Global variables
@@ -35,6 +37,8 @@ v_cursor_y:
 v_blink_count:
 	.WORD 0
 v_blink_flag:
+	.WORD 0
+v_color:
 	.WORD 0
 
 bss_end:
@@ -93,6 +97,28 @@ putc_screen:
 	push r9
 	jsr r0, cursor_blink_off # Turn off cursor
 	pop r9
+	andi r1, r9, 0x80	# Higher than ASCII?
+	beq putc_screen_0	# not? continue
+	subi r1, r9, 0x9f	# Last hight control char
+	bgt putc_screen_0	# higher? continue
+	subi r1, r9, 0x80	# Get color code
+	ldw r3, r0, v_color	# load current colors (bg/fg)
+	andi r2, r1, 0x10	# Check for BG color
+	bne putc_bg_color
+	andi r3, r3, 0xf0	# Keep old bg color
+	or r3, r3, r1		# Or them together
+	stw r0, r3, v_color	# And store
+	pop lr
+	rts
+putc_bg_color:
+	andi r3, r3, 0x0f	# Keep old fg color
+	sl4i r1, r1, 0		# Shift to bg color pos.
+	andi r1, r1, 0xf0	# Isolate new bg color
+	or r3, r3, r1		# Or them together
+	stw r0, r3, v_color	# And store
+	pop lr
+	rts
+putc_screen_0:
 	subi r1, r9, 10		# Check for '\n'
 	subine r1, r9, 13	# Check for '\r'
 	bne putc_screen_1
@@ -124,6 +150,8 @@ putc_screen_3:
 	jsr r0, get_cursor_address
 	pop r1				# pop character in r1 (former r9)
 	stb r11, r1, 0		# Store character to screen
+	ldw r1, r0, v_color	# Get bg/fg colors
+	stb r11, r1, 0x2000	# Store in color RAM
 	addi r9, r9, 1
 	subi r3, r9, 80		# Is cursor past end of line
 	stwge r0, r3, v_cursor_x # Sore new position
