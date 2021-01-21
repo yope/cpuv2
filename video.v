@@ -59,8 +59,6 @@ module video(
 		endcase
 	endfunction
 
-	integer i;
-
 	initial begin
 		$readmemh("chargen.hex", chargen);
 		palette[0] = 24'h000000;
