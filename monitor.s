@@ -59,6 +59,9 @@ conv_map:
 
 putc_uart:
 	ldiu r1, 0x03000
+	ldw r2, r1, 8	# Read status register
+	andi r2, r2, 1	# TX busy?
+	bne putc_uart
 	stw r1, r9, 0
 	rts
 
