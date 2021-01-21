@@ -305,7 +305,7 @@ cursor_blink_off:
 
 clear:
 	ldi r1, 0x20 # Space character
-	ldi r2, 0x4c # Blue background, light blue foreground
+	ldw r2, r0, v_color
 	ldi r3, 0x12bf
 	ldiu r4, 0x02000
 clear_loop:
