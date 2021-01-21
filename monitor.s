@@ -251,19 +251,25 @@ printhex32:
 	rts
 
 scroll:
+	push r4
 	ldiu r1, 0x02000
 	ldi r2, 4720
 scroll_loop:
 	ldb r3, r1, 80
 	stb r1, r3, 0
+	ldb r3, r1, 0x2050
+	stb r1, r3, 0x2000
 	addi r1, r1, 1
 	bdec r2, scroll_loop
 	ldi r2, 80
 	ldi r3, 0x20
+	ldw r4, r0, v_color
 scroll_loop2:
 	stb r1, r3, 0
+	stb r1, r4, 0x2000
 	addi r1, r1, 1
 	bdec r2, scroll_loop2
+	pop r4
 	rts
 
 cursor_blink:
