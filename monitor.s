@@ -166,7 +166,7 @@ putc_screen_nl:
 	pop lr
 	rts
 
-putc: # r9: character, r10: device: 0=screen, 1=serial
+putc: # r9: character
 	ldw r1, r0, stdout
 	ori r1, r1, 0
 	beq putc_screen
