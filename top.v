@@ -91,7 +91,7 @@ module top(
 	);
 
 	always @(posedge clk_25mhz) begin
-		if (btn[1] == 1'b1) begin
+		if (btn[0] == 1'b0) begin
 			reset_cnt <= 0;
 			reset <= 1;
 			led_reg <= 8'h00;
@@ -122,6 +122,9 @@ module top(
 						ramdat_o[15:8] <= sel_o[1] ? ram[raddr][15:8] : 8'h00;
 						ramdat_o[23:16] <= sel_o[2] ? ram[raddr][23:16] : 8'h00;
 						ramdat_o[31:24] <= sel_o[3] ? ram[raddr][31:24] : 8'h00;
+					end
+					8'h01: begin
+						ramdat_o[6:0] <= btn[6:0];
 					end
 					default: begin
 					end
