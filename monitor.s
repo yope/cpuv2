@@ -271,6 +271,11 @@ scroll_loop2:
 	pop r4
 	rts
 
+cursor_putxy:
+	stw r0, r9, v_cursor_x
+	stw r0, r10, v_cursor_y
+	rts
+
 cursor_blink:
 	ldw r1, r0, v_blink_count
 	addi r1, r1, 1
