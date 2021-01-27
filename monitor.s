@@ -342,6 +342,69 @@ readbuttons:
 	pop lr
 	rts
 
+menui:
+	push r5
+	push r6
+	push r7
+	push r8
+	ori r1, lr, 0			# Get number of entries
+	ldw r5, r1, 0
+	subi r5, r5, 1			# r5: index of last entry
+	addi r8, lr, 4			# r8: pointer to first string
+	ldi r6, 0			# r6: selected entry
+	ldw r1, r0, v_cursor_x		# Save cursor position
+	ldi r2, menui_cursor
+	stb r2, r1, 0
+	ldw r1, r0, v_cursor_y
+	stb r2, r1, 1
+menui_loop:
+	push r8				# Save to stack
+	ldi r7, 0			# r7: index of entries to print
+	ldi r2, menui_cursor
+	ldb r1, r2, 1			# Get stored y position
+	stw r0, r1, v_cursor_y		# Set cursor y
+menui_printloop:
+	ldi r2, menui_cursor
+	ldb r1, r2, 0			# Get stored x position
+	stw r0, r1, v_cursor_x		# Set cursor x
+	sub r1, r6, r7			# Is current entry selected
+	ldieq r9, 0x92
+	ldine r9, 0x94
+	jsr r0, putc
+	pop r9				# Get next pointer
+	jsr r0, puts			# print it
+	andi r1, r9, 3			# Align r9 to 32 bits
+	beq 4				# Already aligned? skip 3
+	xorine r1, r1, 3		# Do alignment
+	add r9, r9, r1
+	addine r9, r9, 1
+	push r9				# push next pointer
+	ldi r9, 0x94
+	jsr r0, putc			# Make blue background again
+	addi r7, r7, 1			# Next enty
+	sub r1, r5, r7
+	bge menui_printloop
+	jsr r0, readbuttons
+	andi r1, r9, 0x08		# Up?
+	beq 3				# Skip two instructions if not
+	ori r6, r6, 0			# r6 > 0?
+	subigt r6, r6, 1		# then decrement
+	andi r1, r9, 0x10		# Down?
+	beq 3				# Skip two instructions if not
+	sub r1, r5, r6			# r1 = number of entries - selected - 1
+	addigt r6, r6, 1		# Still positive? then add 1 to selected
+	pop lr				# We need to pop the link register here
+	andi r1, r9, 0x04		# F2 pressed
+	beq menui_loop
+	ori r9, r6, 0
+	pop r8
+	pop r7
+	pop r6
+	pop r5
+	rts
+menui_cursor:
+	.WORD 0
+
 main:
 	jsr r0, clear
 	ldi r9, 10 # cr
