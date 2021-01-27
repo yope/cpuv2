@@ -319,6 +319,11 @@ clear_loop:
 	bdec r3, clear_loop
 	rts
 
+delay:
+	ldi r1, 0x60000
+	bdec r1, 0
+	rts
+
 main:
 	jsr r0, clear
 	ldi r9, 10 # cr
