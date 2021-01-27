@@ -407,48 +407,22 @@ menui_cursor:
 
 main:
 	jsr r0, clear
-	ldi r9, 10 # cr
-	jsr r0, putc_screen
-	ldi r1, 1
-	stw r0, r1, stdout	# Send text to UART
-	jsr r0, printsi
-	.STR "MyCPU v2 command interface\r\n\0"
-	stw r0, r0, stdout	# Back to screen
-	b main_status_line
+	stw r0, r0, stdout		# Print to screen
 main_loop:
-	jsr r0, cursor_blink
-	jsr r0, getc_uart
-	ori r9, r9, 0	# Check sign
-	blt main_loop   # No char? Try again
-main_read_loop:
-	ldiu r1, 0x01000
-	stb r1, r9, 0	# Debug uart RX reg
-	jsr r0, putc_screen
-	jsr r0, getc_uart		# Are there more chars in fifo?
-	ori r9, r9, 0			# Check
-	bge main_read_loop		# Read them all
-main_status_line:
-	ldw r5, r0, v_cursor_x
-	ldw r6, r0, v_cursor_y
-	ldw r7, r0, v_color
-	stw r0, r0, v_cursor_x
-	stw r0, r0, v_cursor_y
+	ldi r9, 10
+	ldi r10, 10
+	jsr r0, cursor_putxy
+	jsr r0, menui
+	.WORD 3
+	.STR "Load from serial\n\0"
+	.STR "Start program\n\0"
+	.STR "Reset\n\0"
+	push r9				# Push selection
+	ldi r9, 1
+	ldi r10, 20
+	jsr r0, cursor_putxy
 	jsr r0, printsi
-	.STR "\x81\x98    Terminal screen line: \0"
-	ori r9, r6, 0
+	.STR "Choice: \0"
+	pop r9
 	jsr r0, printhex8
-	jsr r0, printsi
-	.STR " column: \0"
-	ori r9, r5, 0
-	jsr r0, printhex8
-	ldw r8, r0, v_cursor_x
-	subi r8, r8, 80
-	noti r8, r8, 0
-main_fill_line:
-	ldi r9, 0x20
-	jsr r0, putc_screen
-	bdec r8, main_fill_line
-	stw r0, r5, v_cursor_x
-	stw r0, r6, v_cursor_y
-	stw r0, r7, v_color
 	b main_loop
