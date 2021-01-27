@@ -324,6 +324,24 @@ delay:
 	bdec r1, 0
 	rts
 
+readbuttons:
+	push lr
+	ldiu r1, 0x01000
+	ldw r9, r1, 0
+	xori r9, r9, 1
+	popeq lr			# No key detected? return
+	rtseq
+	push r9
+	jsr r0, delay			# Wait a bit to debounce
+	pop r2
+	ldiu r1, 0x01000		# Try again
+	ldw r9, r1, 0
+	xori r9, r9, 1
+	xor r1, r2, r9
+	ldine r9, 0			# Not equal? return 0
+	pop lr
+	rts
+
 main:
 	jsr r0, clear
 	ldi r9, 10 # cr
