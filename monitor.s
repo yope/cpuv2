@@ -417,6 +417,48 @@ menui_printloop:
 menui_cursor:
 	.WORD 0
 
+hexdump: # r9: start pointer, r10: number of words
+	push lr
+	push r5
+	push r6
+	push r7
+	push r8
+	ldw r5, r0, v_cursor_x		# r5: cursor x
+	ldw r6, r0, v_cursor_y		# r6: cursor y
+	ori r7, r10, 0			# r7: counter
+	ori r8, r9, 0			# r8: pointer
+hexdump_loop:
+	ori r9, r8, 0
+	jsr r0, printhex32
+	ldi r9, 0x3a			# Colon
+	jsr r0, putc
+	ldi r9, 0x20			# space
+	jsr r0, putc
+	ldw r9, r8, 0
+	jsr r0, printhex32
+	jsr r0, printsi
+	.STR " \x5d\0"
+hexdump_asciiloop:
+	ldb r9, r8, 0
+	andi r1, r9, 0xe0
+	ldieq r9, 0x2e
+	andi r1, r9, 0x80
+	ldine r9, 0x2e
+	jsr r0, putc
+	addi r8, r8, 1
+	andi r1, r8, 3
+	bne hexdump_asciiloop
+	jsr r0, printsi
+	.STR "\x5d\n\0"
+	stw r0, r5, v_cursor_x
+	bdec r7, hexdump_loop
+	pop r8
+	pop r7
+	pop r6
+	pop r5
+	pop lr
+	rts
+
 main:
 	jsr r0, clear
 	stw r0, r0, stdout		# Print to screen
