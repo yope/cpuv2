@@ -111,6 +111,9 @@ class Cpuv2Assembler:
 			ret = [ord(x) for x in s]
 		elif cmd == ".WORD":
 			ret = [int(arg, 0)]
+		elif cmd == ".ORG":
+			ret = []
+			self.pc = int(arg, 0)
 		else:
 			print("Command syntax error in line {}: {!r}".format(self.lineno, cmd))
 		self.pc += len(ret) * 4
