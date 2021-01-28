@@ -403,7 +403,12 @@ menui_printloop:
 	pop lr				# We need to pop the link register here
 	andi r1, r9, 0x04		# F2 pressed
 	beq menui_loop
-	ori r9, r6, 0
+	push lr
+	jsr r0, readbuttons
+	ori r9, r9, 0
+	bne -2				# Wait until button released
+	pop lr
+	ori r9, r6, 0			# Return selected entry
 	pop r8
 	pop r7
 	pop r6
