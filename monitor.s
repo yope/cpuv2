@@ -324,6 +324,13 @@ delay:
 	bdec r1, 0
 	rts
 
+delay_n:
+	push lr
+	jsr r0, delay
+	bdec r9, -1
+	pop lr
+	rts
+
 readbuttons:
 	push lr
 	ldiu r1, 0x01000
