@@ -459,6 +459,88 @@ hexdump_asciiloop:
 	pop lr
 	rts
 
+strtoul_hex: # r9: string buffer, r10: destination pointer
+	ldi r3, 0		# r3: result accumulator
+	ldb r2, r9, 0		# Load first char
+strtoul_hex_loop:
+	subi r1, r2, 0x60
+	subige r2, r2, 0x20	# convert to upper case if needed.
+	subi r1, r2, 0x41	# is character A...F?
+	subige r2, r2, 7	# Put after 9
+	subi r2, r2, 0x30	# convert char to number
+	blt strtoul_hex_error	# Wasn't a number? error out
+	subi r1, r2, 0x0f	# If bigger than 15?
+	bgt strtoul_hex_error   # Error out
+	sl4i r3, r3, 0		# Shift result left 4 bits
+	or r3, r3, r2		# Or in next nibble
+	addi r9, r9, 1
+	ldb r2, r9, 0		# Read next char
+	ori r2, r2, 0		# is it \0?
+	bne strtoul_hex_loop	# Not? continue
+	stw r10, r3, 0		# Save result
+	ldi r9, 0		# Load return value SUCCESS
+	b 2
+strtoul_hex_error:
+	ldis r9, 0xfffff	# Return value -1
+
+	ori r9, r9, 0		# Set flags
+	rts
+
+loadhex: # r9 start address
+	push lr
+	push r5
+	push r6
+	push r7
+	ori r6, r9, 0		# r6: pointer
+	jsr r0, printsi
+	.STR "\n LOADING...\n\0"
+loadhex_loop:
+	ldi r5, 0		# r5: line buffer counter
+loadhex_lineloop:
+	jsr r0, getc_uart
+	ori r7, r9, 0		# r7: received char
+	blt loadhex_lineloop
+	subi r1, r7, 10		# LF
+	subine r1, r7, 13	# CR
+	subine r1, r7, 4	# EOT
+	beq 5
+	stb r5, r7, loadhex_buffer
+	addi r5, r5, 1
+	andi r5, r5, 15		# Max 16 chars in buffer
+	b loadhex_lineloop
+
+	stb r5, r0, loadhex_buffer	# Terminating \0
+	subi r1, r5, 8
+	bne 6
+	ldi r9, loadhex_buffer
+	ori r10, r6, 0
+	jsr r0, strtoul_hex
+	bne loadhex_error
+	addi r6, r6, 4
+
+	subi r1, r7, 4		# EOT?
+	bne loadhex_loop	# Continue if not
+	ldi r9, 0		# Return 0 for SUCCESS
+	b 2
+
+loadhex_error:
+	ldis r9, 0xfffff	# On error return -1
+	ori r9, r9, 0		# Set flags
+	pop r7
+	pop r6
+	pop r5
+	pop lr
+	rts
+loadhex_buffer:
+	.WORD 0 # 8 words = 32 byte line buffer
+	.WORD 0
+	.WORD 0
+	.WORD 0
+	.WORD 0
+	.WORD 0
+	.WORD 0
+	.WORD 0
+
 main:
 	jsr r0, clear
 	stw r0, r0, stdout		# Print to screen
