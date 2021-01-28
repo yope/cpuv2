@@ -9,7 +9,7 @@ module top(
 	output ftdi_rxd,
 	output wifi_gpio0
 );
-	reg [31:0] ram[0:1023];
+	reg [31:0] ram[0:2047];
 	reg [3:0] reset_cnt = 0;
 	reg [31:0] ramdat_o;
 	reg reset;
@@ -24,7 +24,7 @@ module top(
 	wire irq;
 	wire reset_cnt_stop;
 	wire [7:0] bnksel;
-	wire [9:0] raddr;
+	wire [10:0] raddr;
 	wire [3:0] unused_gpdi_dn;
 	wire video_stb, uart_stb;
 	wire [31:0] video_dat_o, uart_dat_o;
@@ -34,7 +34,7 @@ module top(
 
 	assign reset_cnt_stop = &reset_cnt;
 	assign bnksel = adr_o[31:24];
-	assign raddr = adr_o[11:2];
+	assign raddr = adr_o[12:2];
 
 	assign ack_i = (bnksel == 8'h02) ? video_ack : (bnksel == 8'h03) ? uart_ack : stb_o;
 	assign dat_i = (bnksel == 8'h02) ? video_dat_o : (bnksel == 8'h03) ? uart_dat_o : ramdat_o;
