@@ -543,22 +543,61 @@ loadhex_buffer:
 
 main:
 	jsr r0, clear
+	ldi r5, 64
+	jsr r0, getc_uart
+	bdec r5, -1			# Empty uart buffer
 	stw r0, r0, stdout		# Print to screen
 main_loop:
-	ldi r9, 10
-	ldi r10, 10
+	ldi r9, 50
+	ldi r10, 2
+	jsr r0, cursor_putxy
+	ldi r9, 0x1000
+	ldi r10, 48
+	jsr r0, hexdump
+	ldi r9, 20
+	ldi r10, 50
+	jsr r0, cursor_putxy
+	ldi r9, loadhex_buffer
+	ldi r10, 8
+	jsr r0, hexdump
+	ldi r9, 2
+	ldi r10, 2
 	jsr r0, cursor_putxy
 	jsr r0, menui
 	.WORD 3
-	.STR "Load from serial\n\0"
+	.STR "Load from serial port\n\0"
 	.STR "Start program\n\0"
 	.STR "Reset\n\0"
-	push r9				# Push selection
+	ori r5, r9, 0			# r5: Selection
 	ldi r9, 1
-	ldi r10, 20
+	ldi r10, 8
 	jsr r0, cursor_putxy
 	jsr r0, printsi
 	.STR "Choice: \0"
-	pop r9
+	ori r9, r5, 0
 	jsr r0, printhex8
+	ori r1, r5, 0
+	bne 5
+	ldi r9, 0x1000
+	jsr r0, loadhex
+	beq main_success
+	bne main_error
+
+	subi r1, r5, 1
+	jsreq r0, 0x1000
+
+	b main_loop
+main_error:
+	jsr r0, printsi
+	.STR "\n ERROR\n\0"
+	ldi r9, 10
+	jsr r0, delay_n
+	jsr r0, clear
+	b main_loop
+main_success:
+	jsr r0, printsi
+	.STR "\n OK\n\0"
+	ldi r9, 10
+	jsr r0, delay_n
+	jsr r0, clear
 	b main_loop
