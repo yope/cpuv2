@@ -12,6 +12,16 @@
 #
 
 reset:
+	b start
+irq0:
+	b isr0
+irq1:
+	b isr1
+irq2:
+	b isr2
+irq3:
+	b isr3
+start:
 	ldi r0, 0
 	ldi sp, 0xffc
 	ldi r1, bss_end
@@ -43,6 +53,26 @@ stdout:
 	.WORD 0
 
 bss_end:
+
+isr0:
+	ldi r2, 0x11
+isr_common:
+	ldi r0, 0
+	ldiu r1, 0x01000
+	stb r1, r2, 0
+	rti
+
+isr1:
+	ldi r2, 0x22
+	b isr_common
+
+isr2:
+	ldi r2, 0x33
+	b isr_common
+
+isr3:
+	ldi r2, 0x44
+	b isr_common
 
 ascii_conv:
 	andi r1, r9, 0xe0
