@@ -21,7 +21,7 @@ module top(
 	wire [3:0] sel_o;
 	wire stb_o;
 	wire we_o;
-	wire irq;
+	wire [3:0] irq;
 	wire reset_cnt_stop;
 	wire [7:0] bnksel;
 	wire [10:0] raddr;
@@ -42,7 +42,7 @@ module top(
     // Tie GPIO0, keep board from rebooting
     assign wifi_gpio0 = 1'b1;
 
-	assign irq = 1'b0;
+	assign irq = {3'b000, btn[6]};
 
 	assign led = led_reg;
 
