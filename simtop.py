@@ -20,11 +20,17 @@ class CpuSim:
 
 	def run(self, n):
 		self.reset()
-		for i in range(n):
+		for i in range(n // 2):
+			self.clock()
+		self.sim.io.btn = 0x41;
+		for i in range(10):
+			self.clock()
+		self.sim.io.btn = 0x01;
+		for i in range(n // 2):
 			self.clock()
 
 if __name__ == "__main__":
 	#alu = AluSim()
 	#alu.run()
 	cpu = CpuSim()
-	cpu.run(480)
+	cpu.run(380)
