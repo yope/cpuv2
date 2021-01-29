@@ -175,10 +175,17 @@ module cpu(
 					sel_o <= 4'b1111;
 					stb_o <= 1;
 					if (ack_i) begin
-						state <= ST_DECODE;
 						if (|irqreg & !irqmode)
-							irqmode <= 1;
+							state <= ST_IRQ;
+						else
+							state <= ST_DECODE;
 					end
+				end
+
+				ST_IRQ: begin
+					if (|irqreg & !irqmode)
+						irqmode <= 1;
+					state <= ST_DECODE;
 				end
 
 				ST_DECODE: begin
