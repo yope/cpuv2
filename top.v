@@ -39,8 +39,8 @@ module top(
 	assign ack_i = (bnksel == 8'h02) ? video_ack : (bnksel == 8'h03) ? uart_ack : stb_o;
 	assign dat_i = (bnksel == 8'h02) ? video_dat_o : (bnksel == 8'h03) ? uart_dat_o : ramdat_o;
 
-    // Tie GPIO0, keep board from rebooting
-    assign wifi_gpio0 = 1'b1;
+	// Tie GPIO0, keep board from rebooting
+	assign wifi_gpio0 = 1'b1;
 
 	assign irq = {3'b000, btn[6]};
 
