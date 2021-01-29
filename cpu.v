@@ -5,7 +5,7 @@ module cpu(
 	input rst_i,
 	input [31:0] dat_i,
 	input ack_i,
-	input irq,
+	input [3:0] irq,
 	output reg we_o,
 	output reg stb_o,
 	output reg [31:0] adr_o,
@@ -36,14 +36,16 @@ module cpu(
 	wire lt, gt, lte, gte;
 	wire [3:0] selbo, selbi, selho, selhi;
 	wire [31:0] datbo, datbi, datho, dathi;
+	wire [2:0] irqaddr;
 
 	reg [31:0] Rr[0:1][0:15];
 	reg irqmode;
+	reg [3:0] irqreg;
 	reg [2:0] state;
 	reg [31:0] ir, next_pc;
-	reg c_reg;
-	reg z_reg;
-	reg n_reg;
+	reg c_reg[0:1];
+	reg z_reg[0:1];
+	reg n_reg[0:1];
 
 	//assign R = R[irqmode];
 	assign pc = Rr[irqmode][15];
@@ -67,15 +69,17 @@ module cpu(
 	assign operand_a = Rr[irqmode][Rs1];
 	assign operand_b = (opc == 4'b0000) ? Rr[irqmode][Rs2] : {20'h00000, imm12};
 
-	assign lt = n_reg & !z_reg;
-	assign gt = !n_reg & !z_reg;
-	assign lte = n_reg | z_reg;
-	assign gte = !n_reg | z_reg;
+	assign lt = n_reg[irqmode] & !z_reg[irqmode];
+	assign gt = !n_reg[irqmode] & !z_reg[irqmode];
+	assign lte = n_reg[irqmode] | z_reg[irqmode];
+	assign gte = !n_reg[irqmode] | z_reg[irqmode];
 
 	assign selbo = f_selb(store_addr[1:0]);
 	assign selbi = f_selb(load_addr[1:0]);
 	assign selho = store_addr[1] ? 4'b1100 : 4'b0011;
 	assign selhi = load_addr[1] ? 4'b1100 : 4'b0011;
+
+	assign irqaddr = irqreg[3] ? 3'b001 : irqreg[2] ? 3'b010 : irqreg[1] ? 3'b011 : 3'b100;
 
 	function [3:0] f_selb(input [1:0] seladr);
 		case (seladr)
@@ -104,7 +108,7 @@ module cpu(
 		endcase
 	endfunction
 
-	alu alu(.clk(clk), .arg_a(operand_a), .arg_b(operand_b), .op(operation), .c_in(c_reg), .result(result), .z(z), .c(c), .n(n));
+	alu alu(.clk(clk), .arg_a(operand_a), .arg_b(operand_b), .op(operation), .c_in(c_reg[irqmode]), .result(result), .z(z), .c(c), .n(n));
 
 	always @(posedge clk) begin
 		if (rst_i) begin
@@ -145,36 +149,50 @@ module cpu(
 					Rr[1][14] <= 32'b0;
 					Rr[1][15] <= 32'b0;
 					irqmode <= 0;
-					c_reg <= 0;
-					z_reg <= 1;
-					n_reg <= 0;
+					c_reg[0] <= 0;
+					c_reg[1] <= 0;
+					z_reg[0] <= 1;
+					z_reg[1] <= 1;
+					n_reg[0] <= 0;
+					n_reg[1] <= 0;
 					stb_o <= 0;
 					next_pc <= 0;
 					state <= ST_FETCH;
 				end
 
 				ST_FETCH: begin
-					adr_o <= next_pc;
-					Rr[irqmode][15] <= next_pc;
+					if (|irqreg & !irqmode) begin
+						// IRQ
+						adr_o <= {27'b0, irqaddr, 2'b00};
+						Rr[1][15] <= {27'b0, irqaddr, 2'b00};
+						Rr[0][15] <= next_pc; // Store next_pc
+					end else begin
+						// Normal or interrupt mode
+						adr_o <= next_pc;
+						Rr[irqmode][15] <= next_pc;
+					end
 					we_o <= 0;
 					sel_o <= 4'b1111;
 					stb_o <= 1;
 					if (ack_i) begin
 						state <= ST_DECODE;
+						if (|irqreg & !irqmode)
+							irqmode <= 1;
 					end
 				end
 
 				ST_DECODE: begin
+					irqreg <= irq; // Latch IRQ for next FETCH cycle
 					ir <= dat_i;
 					stb_o <= 0;
 					next_pc <= pc + 4;
 					casez (cond)
-						4'b100?: state <= (z_reg == cond[0]) ? ST_EXECUTE : ST_FETCH;
+						4'b100?: state <= (z_reg[irqmode] == cond[0]) ? ST_EXECUTE : ST_FETCH;
 						4'b1110: state <= lt ? ST_EXECUTE : ST_FETCH;
 						4'b1100: state <= gt ? ST_EXECUTE : ST_FETCH;
 						4'b1111: state <= lte ? ST_EXECUTE : ST_FETCH;
 						4'b1101: state <= gte ? ST_EXECUTE : ST_FETCH;
-						4'b101?: state <= (c_reg == cond[0]) ? ST_EXECUTE : ST_FETCH;
+						4'b101?: state <= (c_reg[irqmode] == cond[0]) ? ST_EXECUTE : ST_FETCH;
 						default: state <= ST_EXECUTE;
 					endcase
 				end
@@ -183,9 +201,9 @@ module cpu(
 					case (opc)
 						4'b0000, 4'b0001: begin
 							Rr[irqmode][Rd] <= result;
-							c_reg <= c;
-							z_reg <= z;
-							n_reg <= n;
+							c_reg[irqmode] <= c;
+							z_reg[irqmode] <= z;
+							n_reg[irqmode] <= n;
 							state <= ST_FETCH;
 						end
 						4'b0010: begin
@@ -251,7 +269,10 @@ module cpu(
 						4'b1111: begin
 							case (Rd)
 								4'b0000: next_pc <= Rr[irqmode][14]; // RTS
-								4'b0001: irqmode <= 0; // RTI
+								4'b0001: begin
+									irqmode <= 0; // RTI
+									next_pc <= Rr[0][15]; // next_pc was stored here when IRQ entered.
+								end
 								default: begin
 								end
 							endcase
