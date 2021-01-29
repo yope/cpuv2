@@ -13,10 +13,10 @@ class CpuSim:
 		io.clk_25mhz = 1
 
 	def reset(self):
-		self.sim.io.btn = 0x02
-		self.clock()
-		self.clock()
 		self.sim.io.btn = 0x00
+		self.clock()
+		self.clock()
+		self.sim.io.btn = 0x01
 
 	def run(self, n):
 		self.reset()
