@@ -38,19 +38,20 @@ module cpu(
 	wire [31:0] datbo, datbi, datho, dathi;
 	wire [2:0] irqaddr;
 
-	reg [31:0] Rr[0:1][0:15];
+	reg [31:0] Rr[0:15];
 	reg irqmode;
 	reg [3:0] irqreg;
 	reg [2:0] state;
-	reg [31:0] ir, next_pc;
-	reg c_reg[0:1];
-	reg z_reg[0:1];
-	reg n_reg[0:1];
+	reg [31:0] ir, next_pc, epc, elr;
+	reg [2:0] estatus;
+	reg c_reg;
+	reg z_reg;
+	reg n_reg;
 
 	//assign R = R[irqmode];
-	assign pc = Rr[irqmode][15];
-	assign lr = Rr[irqmode][14];
-	assign sp = Rr[irqmode][13];
+	assign pc = Rr[15];
+	assign lr = Rr[14];
+	assign sp = Rr[13];
 	assign opc = ir[31:28];
 	assign cond = dat_i[27:24];
 	assign Rd = ir[23:20];
@@ -62,17 +63,17 @@ module cpu(
 	assign imm16 = ir[15:0];
 	assign imm24 = ir[23:0];
 
-	assign load_addr = Rr[irqmode][Rs1] + {16'h0000, imm16};
-	assign store_addr = Rr[irqmode][Rd] + {16'h0000, imm16};
+	assign load_addr = Rr[Rs1] + {16'h0000, imm16};
+	assign store_addr = Rr[Rd] + {16'h0000, imm16};
 	assign ls_size = opc[1:0];
 
-	assign operand_a = Rr[irqmode][Rs1];
-	assign operand_b = (opc == 4'b0000) ? Rr[irqmode][Rs2] : {20'h00000, imm12};
+	assign operand_a = Rr[Rs1];
+	assign operand_b = (opc == 4'b0000) ? Rr[Rs2] : {20'h00000, imm12};
 
-	assign lt = n_reg[irqmode] & !z_reg[irqmode];
-	assign gt = !n_reg[irqmode] & !z_reg[irqmode];
-	assign lte = n_reg[irqmode] | z_reg[irqmode];
-	assign gte = !n_reg[irqmode] | z_reg[irqmode];
+	assign lt = n_reg & !z_reg;
+	assign gt = !n_reg & !z_reg;
+	assign lte = n_reg | z_reg;
+	assign gte = !n_reg | z_reg;
 
 	assign selbo = f_selb(store_addr[1:0]);
 	assign selbi = f_selb(load_addr[1:0]);
@@ -108,7 +109,7 @@ module cpu(
 		endcase
 	endfunction
 
-	alu alu(.clk(clk), .arg_a(operand_a), .arg_b(operand_b), .op(operation), .c_in(c_reg[irqmode]), .result(result), .z(z), .c(c), .n(n));
+	alu alu(.clk(clk), .arg_a(operand_a), .arg_b(operand_b), .op(operation), .c_in(c_reg), .result(result), .z(z), .c(c), .n(n));
 
 	always @(posedge clk) begin
 		if (rst_i) begin
@@ -116,47 +117,31 @@ module cpu(
 		end else begin
 			case (state)
 				ST_RESET: begin
-					Rr[0][0] <= 32'b0;
-					Rr[0][1] <= 32'b0;
-					Rr[0][2] <= 32'b0;
-					Rr[0][3] <= 32'b0;
-					Rr[0][4] <= 32'b0;
-					Rr[0][5] <= 32'b0;
-					Rr[0][6] <= 32'b0;
-					Rr[0][7] <= 32'b0;
-					Rr[0][8] <= 32'b0;
-					Rr[0][9] <= 32'b0;
-					Rr[0][10] <= 32'b0;
-					Rr[0][11] <= 32'b0;
-					Rr[0][12] <= 32'b0;
-					Rr[0][13] <= 32'b0;
-					Rr[0][14] <= 32'b0;
-					Rr[0][15] <= 32'b0;
-					Rr[1][0] <= 32'b0;
-					Rr[1][1] <= 32'b0;
-					Rr[1][2] <= 32'b0;
-					Rr[1][3] <= 32'b0;
-					Rr[1][4] <= 32'b0;
-					Rr[1][5] <= 32'b0;
-					Rr[1][6] <= 32'b0;
-					Rr[1][7] <= 32'b0;
-					Rr[1][8] <= 32'b0;
-					Rr[1][9] <= 32'b0;
-					Rr[1][10] <= 32'b0;
-					Rr[1][11] <= 32'b0;
-					Rr[1][12] <= 32'b0;
-					Rr[1][13] <= 32'b0;
-					Rr[1][14] <= 32'b0;
-					Rr[1][15] <= 32'b0;
+					Rr[0] <= 32'b0;
+					Rr[1] <= 32'b0;
+					Rr[2] <= 32'b0;
+					Rr[3] <= 32'b0;
+					Rr[4] <= 32'b0;
+					Rr[5] <= 32'b0;
+					Rr[6] <= 32'b0;
+					Rr[7] <= 32'b0;
+					Rr[8] <= 32'b0;
+					Rr[9] <= 32'b0;
+					Rr[10] <= 32'b0;
+					Rr[11] <= 32'b0;
+					Rr[12] <= 32'b0;
+					Rr[13] <= 32'b0;
+					Rr[14] <= 32'b0;
+					Rr[15] <= 32'b0;
 					irqmode <= 0;
-					c_reg[0] <= 0;
-					c_reg[1] <= 0;
-					z_reg[0] <= 1;
-					z_reg[1] <= 1;
-					n_reg[0] <= 0;
-					n_reg[1] <= 0;
+					c_reg <= 0;
+					z_reg <= 1;
+					n_reg <= 0;
 					stb_o <= 0;
 					next_pc <= 0;
+					estatus <= 3'b010;
+					elr <= 32'b0;
+					epc <= 32'b0;
 					state <= ST_FETCH;
 				end
 
@@ -164,28 +149,23 @@ module cpu(
 					if (|irqreg & !irqmode) begin
 						// IRQ
 						adr_o <= {27'b0, irqaddr, 2'b00};
-						Rr[1][15] <= {27'b0, irqaddr, 2'b00};
-						Rr[0][15] <= next_pc; // Store next_pc
+						Rr[15] <= {27'b0, irqaddr, 2'b00};
+						epc <= next_pc; // Store next_pc
+						elr <= lr;
+						estatus <= {c_reg, z_reg, n_reg};
 					end else begin
 						// Normal or interrupt mode
 						adr_o <= next_pc;
-						Rr[irqmode][15] <= next_pc;
+						Rr[15] <= next_pc;
 					end
 					we_o <= 0;
 					sel_o <= 4'b1111;
 					stb_o <= 1;
 					if (ack_i) begin
 						if (|irqreg & !irqmode)
-							state <= ST_IRQ;
-						else
-							state <= ST_DECODE;
+							irqmode <= 1;
+						state <= ST_DECODE;
 					end
-				end
-
-				ST_IRQ: begin
-					if (|irqreg & !irqmode)
-						irqmode <= 1;
-					state <= ST_DECODE;
 				end
 
 				ST_DECODE: begin
@@ -194,12 +174,12 @@ module cpu(
 					stb_o <= 0;
 					next_pc <= pc + 4;
 					casez (cond)
-						4'b100?: state <= (z_reg[irqmode] == cond[0]) ? ST_EXECUTE : ST_FETCH;
+						4'b100?: state <= (z_reg == cond[0]) ? ST_EXECUTE : ST_FETCH;
 						4'b1110: state <= lt ? ST_EXECUTE : ST_FETCH;
 						4'b1100: state <= gt ? ST_EXECUTE : ST_FETCH;
 						4'b1111: state <= lte ? ST_EXECUTE : ST_FETCH;
 						4'b1101: state <= gte ? ST_EXECUTE : ST_FETCH;
-						4'b101?: state <= (c_reg[irqmode] == cond[0]) ? ST_EXECUTE : ST_FETCH;
+						4'b101?: state <= (c_reg == cond[0]) ? ST_EXECUTE : ST_FETCH;
 						default: state <= ST_EXECUTE;
 					endcase
 				end
@@ -207,22 +187,22 @@ module cpu(
 				ST_EXECUTE: begin
 					case (opc)
 						4'b0000, 4'b0001: begin
-							Rr[irqmode][Rd] <= result;
-							c_reg[irqmode] <= c;
-							z_reg[irqmode] <= z;
-							n_reg[irqmode] <= n;
+							Rr[Rd] <= result;
+							c_reg <= c;
+							z_reg <= z;
+							n_reg <= n;
 							state <= ST_FETCH;
 						end
 						4'b0010: begin
-							Rr[irqmode][Rd] <= {12'h000, imm20};
+							Rr[Rd] <= {12'h000, imm20};
 							state <= ST_FETCH;
 						end
 						4'b0011: begin
-							Rr[irqmode][Rd] <= imm20[19] ? {12'hfff, imm20} : {12'h000, imm20};
+							Rr[Rd] <= imm20[19] ? {12'hfff, imm20} : {12'h000, imm20};
 							state <= ST_FETCH;
 						end
 						4'b0111: begin
-							Rr[irqmode][Rd] <= {imm20, 12'h000};
+							Rr[Rd] <= {imm20, 12'h000};
 							state <= ST_FETCH;
 						end
 						4'b0100, 4'b0101, 4'b0110: begin
@@ -237,7 +217,7 @@ module cpu(
 							stb_o <= 1;
 							if (ack_i) begin
 								if (Rs1 == 4'b1101) // R13 == Stack pointer
-									Rr[irqmode][13] <= Rr[irqmode][13] + 4; // POP
+									Rr[13] <= Rr[13] + 4; // POP
 								state <= ST_LOAD;
 							end
 						end
@@ -245,15 +225,15 @@ module cpu(
 							adr_o <= store_addr;
 							we_o <= 1;
 							case (ls_size)
-								2'b00: begin sel_o <= selbo; dat_o <= f_datbo(store_addr[1:0], Rr[irqmode][Rs1]); end
-								2'b01: begin sel_o <= selho; dat_o <= store_addr[1] ? {Rr[irqmode][Rs1][15:0], 16'h0000} : {16'h0000, Rr[irqmode][Rs1][15:0]}; end
-								2'b10: begin sel_o <= 4'b1111; dat_o <= Rr[irqmode][Rs1]; end
-								default: begin sel_o <= 4'b1111; dat_o <= Rr[irqmode][Rs1]; end
+								2'b00: begin sel_o <= selbo; dat_o <= f_datbo(store_addr[1:0], Rr[Rs1]); end
+								2'b01: begin sel_o <= selho; dat_o <= store_addr[1] ? {Rr[Rs1][15:0], 16'h0000} : {16'h0000, Rr[Rs1][15:0]}; end
+								2'b10: begin sel_o <= 4'b1111; dat_o <= Rr[Rs1]; end
+								default: begin sel_o <= 4'b1111; dat_o <= Rr[Rs1]; end
 							endcase
 							stb_o <= 1;
 							if (ack_i) begin
 								if (Rd == 4'b1101) // R13 == Stack pointer
-									Rr[irqmode][13] <= Rr[irqmode][13] - 4; // PUSH
+									Rr[13] <= Rr[13] - 4; // PUSH
 								state <= ST_STORE;
 							end
 						end
@@ -262,23 +242,27 @@ module cpu(
 							state <= ST_FETCH;
 						end
 						4'b1101: begin
-							if (Rr[irqmode][Rd] != 32'b0) begin
+							if (Rr[Rd] != 32'b0) begin
 								next_pc <= pc + {{10{imm20[19]}}, imm20, 2'b00};
-								Rr[irqmode][Rd] <= Rr[irqmode][Rd] - 1;
+								Rr[Rd] <= Rr[Rd] - 1;
 							end
 							state <= ST_FETCH;
 						end
 						4'b1110: begin
-							Rr[irqmode][14] <= next_pc;
-							next_pc <= Rr[irqmode][Rd] + {12'h000, imm20};
+							Rr[14] <= next_pc;
+							next_pc <= Rr[Rd] + {12'h000, imm20};
 							state <= ST_FETCH;
 						end
 						4'b1111: begin
 							case (Rd)
-								4'b0000: next_pc <= Rr[irqmode][14]; // RTS
+								4'b0000: next_pc <= Rr[14]; // RTS
 								4'b0001: begin
 									irqmode <= 0; // RTI
-									next_pc <= Rr[0][15]; // next_pc was stored here when IRQ entered.
+									next_pc <= epc; // next_pc was stored here when IRQ entered.
+									Rr[14] <= elr;
+									c_reg <= estatus[2];
+									z_reg <= estatus[1];
+									n_reg <= estatus[0];
 								end
 								default: begin
 								end
@@ -294,10 +278,10 @@ module cpu(
 				ST_LOAD: begin
 					stb_o <= 0;
 					case (ls_size)
-						2'b00: Rr[irqmode][Rd] <= f_datbi(load_addr[1:0], dat_i);
-						2'b01: Rr[irqmode][Rd] <= load_addr[1] ? {16'h0000, dat_i[31:16]} : {16'h0000, dat_i[15:0]};
-						2'b10: Rr[irqmode][Rd] <= dat_i;
-						default: Rr[irqmode][Rd] <= dat_i;
+						2'b00: Rr[Rd] <= f_datbi(load_addr[1:0], dat_i);
+						2'b01: Rr[Rd] <= load_addr[1] ? {16'h0000, dat_i[31:16]} : {16'h0000, dat_i[15:0]};
+						2'b10: Rr[Rd] <= dat_i;
+						default: Rr[Rd] <= dat_i;
 					endcase
 					state <= ST_FETCH;
 				end
