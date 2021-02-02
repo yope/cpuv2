@@ -4,6 +4,7 @@ module top(
 	input clk_25mhz,
 	input [6:0] btn,
 	input ftdi_txd,
+	inout [27:0] gp, gn,
 	output [7:0] led,
 	output [3:0] gpdi_dp, // gpdi_dn,
 	output ftdi_rxd,
@@ -30,6 +31,9 @@ module top(
 	wire [31:0] video_dat_o, uart_dat_o;
 	wire video_ack, uart_ack;
 
+	wire enet_rxp, enet_rxn, enet_txp, enet_txn;
+	wire clk_200mhz, clk_100mhz, clk_20mhz;
+
 	initial $readmemh("firmware.hex", ram);
 
 	assign reset_cnt_stop = &reset_cnt;
@@ -48,6 +52,9 @@ module top(
 
 	assign video_stb = (bnksel == 8'h02) & stb_o;
 	assign uart_stb = (bnksel == 8'h03) & stb_o;
+
+	assign gp[20] = enet_txp;
+	assign gn[20] = enet_txn;
 
 	cpu cpu(
 		.clk(clk_25mhz),
@@ -88,6 +95,24 @@ module top(
 		.dat_o(uart_dat_o),
 		.rxd(ftdi_txd),
 		.txd(ftdi_rxd)
+	);
+
+	clk_25_200_100_20 clk(
+		.clki(clk_25mhz),
+		.clks1(clk_100mhz),
+		.clks2(clk_20mhz),
+		.clko(clk_200mhz)
+	);
+
+	pls enetpls(
+		.rst_i(reset),
+		.clk_20mhz(clk_20mhz),
+		.data_enable(btn[4]),
+		.txd_in(1'b0),
+		.rxd_in_p(enet_rxp),
+		.rxd_in_n(enet_rxn),
+		.txd_out_p(enet_txp),
+		.txd_out_n(enet_txn)
 	);
 
 	always @(posedge clk_25mhz) begin

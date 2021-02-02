@@ -14,7 +14,7 @@ ulx3s_out.config: cpuv2.json
 		--lpf ulx3s_v20.lpf \
 		--textcfg ulx3s_out.config
 
-cpuv2.json: cpuv2.ys top.v alu.v cpu.v video.v uart.v firmware.hex
+cpuv2.json: cpuv2.ys top.v alu.v cpu.v video.v uart.v enet/clk_25_200_100_20.v enet/pls.v firmware.hex
 	yosys cpuv2.ys
 
 firmware.hex: monitor.s
