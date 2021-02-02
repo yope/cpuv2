@@ -55,22 +55,32 @@ stdout:
 bss_end:
 
 isr0:
+	push r1
+	push r2
 	ldi r2, 0x11
 isr_common:
 	ldi r0, 0
 	ldiu r1, 0x01000
 	stb r1, r2, 0
+	pop r2
+	pop r1
 	rti
 
 isr1:
+	push r1
+	push r2
 	ldi r2, 0x22
 	b isr_common
 
 isr2:
+	push r1
+	push r2
 	ldi r2, 0x33
 	b isr_common
 
 isr3:
+	push r1
+	push r2
 	ldi r2, 0x44
 	b isr_common
 
