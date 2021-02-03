@@ -5,9 +5,9 @@ This is just a learning project and not meant to be anything serious.
 This project contains the design of a SoC, currently sythesizable for the ULX3S FPGA board.
 It contains my own design of a 32-bit CPU core without any fancy stuff like an MMU, pipelines or
 caches (yet?). It doesn't even have a multiplier nor a barrel-shifter. That's because I like
-simplicity and a small(ish) footprint. Besides the CPU there is currently some internal RAM and
-a very simple video interface using the HDMI output of the ULX3S board. Currently it only supports
-text though. No idea where I will go from here, but I'll probably add a UART also at least.
+simplicity and a small(ish) footprint. Besides the CPU there is currently some internal RAM,
+a very simple video interface using the HDMI output of the ULX3S board, a very simple UART and
+an experimental 10Base-T Ethernet MAC+PHY (only able to transmit a test frame right now).
 
 ### CPU design
 
@@ -184,6 +184,23 @@ The color information for background and foreground color of each character cell
 in the colorram buffer and uses a fixed palette of 16 colors. Each byte of colorram contains
 the foreground color index in the 4 LSBs and the background color index in the 4 MSBs.
 
+### UART ###
+
+There is also a very simple UART. It has a baud-rate generator and can transmit and
+receive 8-bit data with one stop bit and no parity. It has a rather large RX-fifo, to 
+accomodate polling-based operation without losing data due to poll-latency.
+
+### 10Base-T Ethernet MAC + PHY ###
+
+The enet module is a work in progress Ethernet controller that implements basic
+10Base-T ethernet (IEEE802.3i). It uses pins gp20/gn20 for TX+/TX- and gp19/gn19
+for RX+/RX- respectively. You can connect TX+ and TX- to the corresponding RJ45
+pair through 2 150Ohm resistors each and you will be able to watch the test frames
+with WireShark or tcpdump on your PC as soon as you press the "right" button.
+Use a short cable to avoid problems and reduce the possibility of accidentally frying your ULX3S.
+The PC side should auto-detect a link at 10Base-T half-duplex after the enet module
+comes out of reset.
+
 ### SoC memory map
 
 The memory map will probably change a lot still, and this documentation might often be out
@@ -198,4 +215,6 @@ are used as "bank selection", and select to which module the access is directed.
  whole address space.
  * 0x02000000-0x020012bf: Video controller text screen buffer RAM. Only byte-addressable.
  * 0x02002000-0x020032bf: Video controller color screen buffer RAM. Only byte-addressable.
+ * 0x03000000-0x0300000f: UART register set.
+ * 0x04000000-0x04001000: Ethernet TX and RX buffer RAM (2KiB each).
 
