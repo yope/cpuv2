@@ -2,6 +2,9 @@
 
 module top(
 	input clk_25mhz,
+`ifdef VERILATOR
+	input clk_20mhz,
+`endif
 	input [6:0] btn,
 	input ftdi_txd,
 	inout [27:0] gp, gn,
@@ -27,12 +30,11 @@ module top(
 	wire [7:0] bnksel;
 	wire [10:0] raddr;
 	wire [3:0] unused_gpdi_dn;
-	wire video_stb, uart_stb;
-	wire [31:0] video_dat_o, uart_dat_o;
-	wire video_ack, uart_ack;
+	wire video_stb, uart_stb, enet_stb;
+	wire [31:0] video_dat_o, uart_dat_o, enet_dat_o;
+	wire video_ack, uart_ack, enet_ack;
 
 	wire enet_rxp, enet_rxn, enet_txp, enet_txn;
-	wire clk_200mhz, clk_100mhz, clk_20mhz;
 
 	initial $readmemh("firmware.hex", ram);
 
@@ -40,8 +42,8 @@ module top(
 	assign bnksel = adr_o[31:24];
 	assign raddr = adr_o[12:2];
 
-	assign ack_i = (bnksel == 8'h02) ? video_ack : (bnksel == 8'h03) ? uart_ack : stb_o;
-	assign dat_i = (bnksel == 8'h02) ? video_dat_o : (bnksel == 8'h03) ? uart_dat_o : ramdat_o;
+	assign ack_i = (bnksel == 8'h02) ? video_ack : (bnksel == 8'h03) ? uart_ack : (bnksel == 8'h04) ? enet_ack : stb_o;
+	assign dat_i = (bnksel == 8'h02) ? video_dat_o : (bnksel == 8'h03) ? uart_dat_o : (bnksel == 8'h04) ? enet_dat_o : ramdat_o;
 
 	// Tie GPIO0, keep board from rebooting
 	assign wifi_gpio0 = 1'b1;
@@ -52,6 +54,7 @@ module top(
 
 	assign video_stb = (bnksel == 8'h02) & stb_o;
 	assign uart_stb = (bnksel == 8'h03) & stb_o;
+	assign enet_stb = (bnksel == 8'h04) & stb_o;
 
 	assign gp[20] = enet_txp;
 	assign gn[20] = enet_txn;
@@ -97,18 +100,19 @@ module top(
 		.txd(ftdi_rxd)
 	);
 
-	clk_25_200_100_20 clk(
-		.clki(clk_25mhz),
-		.clks1(clk_100mhz),
-		.clks2(clk_20mhz),
-		.clko(clk_200mhz)
-	);
-
-	pls enetpls(
-		.rst_i(reset),
+	mac enet(
+		.clk_i(clk_25mhz),
+`ifdef VERILATOR
 		.clk_20mhz(clk_20mhz),
-		.data_enable(btn[4]),
-		.txd_in(1'b0),
+`endif
+		.rst_i(reset),
+		.adr_i(adr_o[12:0]),
+		.dat_i(dat_o),
+		.sel_i(sel_o),
+		.we_i(we_o),
+		.stb_i(enet_stb),
+		.ack_o(enet_ack),
+		.dat_o(enet_dat_o),
 		.rxd_in_p(enet_rxp),
 		.rxd_in_n(enet_rxn),
 		.txd_out_p(enet_txp),
