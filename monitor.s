@@ -24,6 +24,11 @@ irq3:
 start:
 	ldi r0, 0
 	ldi sp, 0xffc
+	# Debug ENET:
+	ldiu r1, 0x04000
+	ldi r2, 72
+	stw r1, r2, 0	# Start Ethernet TX
+
 	ldi r1, bss_end
 	subi r2, r1, bss
 	shri r2, r2, 0
@@ -62,6 +67,11 @@ isr_common:
 	ldi r0, 0
 	ldiu r1, 0x01000
 	stb r1, r2, 0
+	ldiu r1, 0x04000
+	ldw r2, r1, 0
+	ori r2, r2, 0
+	ldi r2, 72
+	stweq r1, r2, 0	# Start Ethernet TX
 	pop r2
 	pop r1
 	rti
@@ -599,6 +609,12 @@ main_loop:
 	jsr r0, cursor_putxy
 	ldi r9, loadhex_buffer
 	ldi r10, 8
+	jsr r0, hexdump
+	ldi r9, 20
+	ldi r10, 30
+	jsr r0, cursor_putxy
+	ldiu r9, 0x04000
+	ldi r10, 16
 	jsr r0, hexdump
 	ldi r9, 2
 	ldi r10, 2
