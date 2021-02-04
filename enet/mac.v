@@ -201,12 +201,13 @@ module mac(
 					// Transmitting data
 					bitclk <= !bitclk;
 					if (bitclk) begin
-						txd <= txreg[txbitidx];
 						txbitcount <= txbitcount + 1;
 						if (txbitcount >= txbitlen_mac) begin
 							txstate <= 3'b100;
+							txd <= ~fcs[31];
 						end else begin
 							fcs <= fcs32_1(txreg[txbitidx], fcs);
+							txd <= txreg[txbitidx];
 						end
 						if (txbitcount[4:0] == 5'b11111)
 							txreg <= txreg_next;
