@@ -32,6 +32,8 @@ module pls(
 					end else if (data_enable) begin
 						txcounter <= 29'b0;
 						txstate <= 3'b001;
+						txen <= 1'b1;
+						txd <= !txd_in;
 						lit <= 1'b0;
 					end else begin
 						txcounter <= txcounter + 1;
@@ -42,7 +44,10 @@ module pls(
 					// Clocking data
 					if (txcounter[0]) begin
 						txen <= 1'b1;
-						txd <= !txd_in;
+						if (data_enable)
+							txd <= !txd_in;
+						else
+							txd <= 1'b1;
 						txcounter <= txcounter + 1;
 					end else begin
 						if (data_enable) begin
