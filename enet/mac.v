@@ -129,6 +129,7 @@ module mac(
 			case (txstate)
 				3'b000: begin
 					// Idle
+					txend_mac <= 1'b0;
 					txbitcount <= 15'b0;
 					bitclk <= 1'b0;
 					if (txstart_bus)
@@ -160,8 +161,9 @@ module mac(
 				3'b011: begin
 					// Wait for PLS to finish IDL and mandatory silence
 					if (!txbusy) begin
-						txstate <= 3'b000;
 						txend_mac <= 1'b1;
+						if (!txstart_bus)
+							txstate <= 3'b000;
 					end
 				end
 				default: begin
