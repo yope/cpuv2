@@ -34,6 +34,7 @@ module mac(
 	reg [14:0] txbitcount;
 	reg [14:0] txbitlen_mac, txbitlen_bus;
 	reg [8:0] txbufptr_reg;
+	reg [31:0] fcs;
 	reg txstart_bus, txend_mac;
 	reg bitclk;
 
@@ -78,6 +79,41 @@ module mac(
 		.txd_out_n(txd_out_n),
 		.txbusy(txbusy)
 	);
+
+	function [31:0] fcs32_1(input di, input [31:0] ci);
+		fcs32_1[0] =  ci[31] ^ di;
+		fcs32_1[1] =  ci[0] ^ ci[31] ^ di;
+		fcs32_1[2] =  ci[1] ^ ci[31] ^ di;
+		fcs32_1[3] =  ci[2];
+		fcs32_1[4] =  ci[3] ^ ci[31] ^ di;
+		fcs32_1[5] =  ci[4] ^ ci[31] ^ di;
+		fcs32_1[6] =  ci[5];
+		fcs32_1[7] =  ci[6] ^ ci[31] ^ di;
+		fcs32_1[8] =  ci[7] ^ ci[31] ^ di;
+		fcs32_1[9] =  ci[8];
+		fcs32_1[10] =  ci[9] ^ ci[31] ^ di;
+		fcs32_1[11] =  ci[10] ^ ci[31] ^ di;
+		fcs32_1[12] =  ci[11] ^ ci[31] ^ di;
+		fcs32_1[13] =  ci[12];
+		fcs32_1[14] =  ci[13];
+		fcs32_1[15] =  ci[14];
+		fcs32_1[16] =  ci[15] ^ ci[31] ^ di;
+		fcs32_1[17] =  ci[16];
+		fcs32_1[18] =  ci[17];
+		fcs32_1[19] =  ci[18];
+		fcs32_1[20] =  ci[19];
+		fcs32_1[21] =  ci[20];
+		fcs32_1[22] =  ci[21] ^ ci[31] ^ di;
+		fcs32_1[23] =  ci[22] ^ ci[31] ^ di;
+		fcs32_1[24] =  ci[23];
+		fcs32_1[25] =  ci[24];
+		fcs32_1[26] =  ci[25] ^ ci[31] ^ di;
+		fcs32_1[27] =  ci[26];
+		fcs32_1[28] =  ci[27];
+		fcs32_1[29] =  ci[28];
+		fcs32_1[30] =  ci[29];
+		fcs32_1[31] =  ci[30];
+	endfunction
 
 	// BUS clock domain
 	always @(posedge clk_i) begin
@@ -132,6 +168,7 @@ module mac(
 					txend_mac <= 1'b0;
 					txbitcount <= 15'b0;
 					bitclk <= 1'b0;
+					fcs <= 32'hffffffff;
 					if (txstart_bus)
 						txstate <= 3'b001;
 				end
@@ -139,26 +176,55 @@ module mac(
 					// Latch first word
 					txreg <= txreg_next;
 					txen <= 1'b1;
-					txd <= txreg_next[0];
-					txbitcount <= 1; // Start at next bit
+					txd <= 1'b1;
 					txstate <= 3'b010;
 				end
 				3'b010: begin
+					// Preamble
+					bitclk <= !bitclk;
+					if (bitclk) begin
+						if (txbitcount == 63) begin
+							txd <= 1'b1;
+						end else if (txbitcount >= 64) begin
+							txd <= txreg[0];
+							fcs <= fcs32_1(txreg[0], fcs);
+							txbitcount <= 1; // Start at next bit
+							txstate <= 3'b011;
+						end else begin
+							txd <= ~txbitcount[0];
+						end
+					end else begin
+						txbitcount <= txbitcount + 1;
+					end
+				end
+				3'b011: begin
 					// Transmitting data
 					bitclk <= !bitclk;
 					if (bitclk) begin
 						txd <= txreg[txbitidx];
+						txbitcount <= txbitcount + 1;
 						if (txbitcount >= txbitlen_mac) begin
-							txen <= 1'b0;
-							txstate <= 3'b011;
+							txstate <= 3'b100;
 						end else begin
-							txbitcount <= txbitcount + 1;
+							fcs <= fcs32_1(txreg[txbitidx], fcs);
 						end
 						if (txbitcount[4:0] == 5'b11111)
 							txreg <= txreg_next;
 					end
 				end
-				3'b011: begin
+				3'b100: begin
+					// Transmit FCS
+					bitclk <= !bitclk;
+					if (bitclk) begin
+						txd <= ~fcs[31 - txbitidx];
+						txbitcount <= txbitcount + 1;
+						if (txbitcount[4:0] == 5'b00000) begin
+							txstate <= 3'b101;
+							txen <= 1'b0;
+						end
+					end
+				end
+				3'b101: begin
 					// Wait for PLS to finish IDL and mandatory silence
 					if (!txbusy) begin
 						txend_mac <= 1'b1;
