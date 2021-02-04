@@ -26,8 +26,8 @@ start:
 	ldi sp, 0xffc
 	# Debug ENET:
 	ldiu r1, 0x04000
-	#ldi r2, 0
-	#stw r1, r2, 0x2c	# Counter = 0
+	ldi r2, 0
+	stw r1, r2, 0x2c	# Counter = 0
 	ldi r2, 60
 	stw r1, r2, 0	# Start Ethernet TX
 
@@ -75,7 +75,7 @@ isr_common:
 	bne isr_exit
 	ldw r2, r1, 0x2c	# Counter value in payload
 	addi r2, r2, 1
-	#stw r1, r2, 0x2c	# Store back
+	stw r1, r2, 0x2c	# Store back
 	ldi r2, 60
 	stw r1, r2, 0	# Start Ethernet TX
 isr_exit:
