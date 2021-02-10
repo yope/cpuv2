@@ -31,8 +31,8 @@ module mac(
 	reg [2:0] rxstate;
 	reg txen;
 	reg [31:0] txreg_next, txreg;
-	reg [14:0] txbitcount;
-	reg [14:0] txbitlen_mac, txbitlen_bus;
+	reg [13:0] txbitcount;
+	reg [13:0] txbitlen_mac, txbitlen_bus;
 	reg [8:0] txbufptr_reg;
 	reg [31:0] fcs;
 	reg txstart_bus, txend_mac;
@@ -48,14 +48,14 @@ module mac(
 	wire [8:0] txbufptr;
 	wire [4:0] txbitidx;
 	wire txbusy;
-	wire [14:0] txbitcount_1;
+	wire [13:0] txbitcount_1;
 
 	initial $readmemh("enetframe.hex", txbuf, 1);
 
 	assign ack_o = stb_i;
 	assign bufaddr = adr_i[10:2];
 	assign txbitcount_1 = txbitcount + 2;
-	assign txbufptr = txbitcount_1[14:5];
+	assign txbufptr = txbitcount_1[13:5];
 	assign txbitidx = txbitcount[4:0];
 
 `ifdef VERILATOR
@@ -124,18 +124,18 @@ module mac(
 		end else begin
 			if (stb_i) begin
 				if (we_i) begin
-					if (!adr_i[12]) begin
+					if (!adr_i[11]) begin
 						txbuf[bufaddr] <= dat_i;
 						if (adr_i[11:0] == 12'b0) begin
 							// TX length register write ==> start TX
 							txstart_bus <= 1'b1;
-							txbitlen_bus <= {dat_i[11:0], 3'b000};
+							txbitlen_bus <= {dat_i[10:0], 3'b000};
 						end
 					end else begin
 						rxbuf[bufaddr] <= dat_i;
 					end
 				end else begin
-					if (!adr_i[12])
+					if (!adr_i[11])
 						dat_o <= txbuf[bufaddr];
 					else
 						dat_o <= rxbuf[bufaddr];
@@ -157,7 +157,7 @@ module mac(
 	// MAC clock domain
 	always @(posedge clk_20mhz) begin
 		if (rst_i) begin
-			txbitcount <= 15'b0;
+			txbitcount <= 14'b0;
 			txstate <= 3'b000;
 			rxstate <= 3'b000;
 		end else begin
@@ -166,7 +166,7 @@ module mac(
 				3'b000: begin
 					// Idle
 					txend_mac <= 1'b0;
-					txbitcount <= 15'b0;
+					txbitcount <= 14'b0;
 					bitclk <= 1'b0;
 					fcs <= 32'hffffffff;
 					if (txstart_bus)
