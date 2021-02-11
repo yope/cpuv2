@@ -19,6 +19,8 @@ module top(
 	reg reset;
 	reg [7:0] led_reg;
 	reg [3:0] irq, irq0;
+	reg [12:0] btn_debounce;
+	reg [6:0] btn_reg;
 	wire ack_i;
 	wire [31:0] dat_i;
 	wire [31:0] dat_o;
@@ -155,7 +157,7 @@ module top(
 						ramdat_o[31:24] <= sel_o[3] ? ram[raddr][31:24] : 8'h00;
 					end
 					8'h01: begin
-						ramdat_o[6:0] <= btn[6:0];
+						ramdat_o[6:0] <= btn_reg[6:0];
 					end
 					default: begin
 					end
@@ -163,6 +165,14 @@ module top(
 			end
 		end
 
+		// Simple debounce buttons
+		if (btn_debounce == 0)
+			btn_reg <= btn;
+`ifdef VERILATOR
+		btn_debounce <= 0;
+`else
+		btn_debounce <= btn_debounce + 1;
+`endif
 
 		// Edge triggered interrupts
 		if (btn_reg[6] & !irq0[0]) begin
