@@ -29,7 +29,9 @@ class Cpuv2Assembler:
 				"bdec": 13,
 				"jsr": 14,
 				"rts": 15,
-				"rti": 15
+				"rti": 15,
+				"sei": 15,
+				"cli": 15
 			}
 		self.alucodes = {
 				"add": 0,
@@ -205,11 +207,18 @@ class Cpuv2Assembler:
 			imm24 = self.parse_imm(rest, 24, bmode=True)
 			return self.instr(opcn, condn, imm24)
 		elif opcn == 15:
+			imm20 = 0
 			if opc == "rti":
 				ext = 1
-			else:
+			elif opc == "sei":
+				ext = 2
+				imm20 = 1
+			elif opc == "cli":
+				ext = 2
+				imm20 = 0
+			else: # rts
 				ext = 0
-			return self.instr(opcn, condn, ext, 0)
+			return self.instr(opcn, condn, ext, imm20)
 		words = [w.strip() for w in rest.split(",")]
 		rdn = self.parse_reg(words[0])
 		if (opcn in [2,3,7,13,14] and len(words) != 2) or (opcn in [0, 1, 4, 5, 6, 8, 9, 10] and len(words) != 3):
