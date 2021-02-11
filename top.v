@@ -18,6 +18,7 @@ module top(
 	reg [31:0] ramdat_o;
 	reg reset;
 	reg [7:0] led_reg;
+	reg [3:0] irq, irq0;
 	wire ack_i;
 	wire [31:0] dat_i;
 	wire [31:0] dat_o;
@@ -25,7 +26,7 @@ module top(
 	wire [3:0] sel_o;
 	wire stb_o;
 	wire we_o;
-	wire [3:0] irq;
+	wire [3:0] irqack;
 	wire reset_cnt_stop;
 	wire [7:0] bnksel;
 	wire [10:0] raddr;
@@ -48,8 +49,6 @@ module top(
 	// Tie GPIO0, keep board from rebooting
 	assign wifi_gpio0 = 1'b1;
 
-	assign irq = {3'b000, btn[6]};
-
 	assign led = led_reg;
 
 	assign video_stb = (bnksel == 8'h02) & stb_o;
@@ -69,7 +68,8 @@ module top(
 		.stb_o(stb_o),
 		.adr_o(adr_o),
 		.dat_o(dat_o),
-		.sel_o(sel_o)
+		.sel_o(sel_o),
+		.irqack(irqack)
 	);
 
 	video video(
@@ -124,6 +124,8 @@ module top(
 			reset_cnt <= 0;
 			reset <= 1;
 			led_reg <= 8'h00;
+			irq <= 4'b0000;
+			irq0 <= 4'b0000;
 		end else begin
 			reset_cnt <= reset_cnt + {3'b000, !reset_cnt_stop};
 			reset <= !reset_cnt_stop;
@@ -160,5 +162,14 @@ module top(
 				endcase
 			end
 		end
+
+
+		// Edge triggered interrupts
+		if (btn_reg[6] & !irq0[0]) begin
+			irq <= {irq[3:1], 1'b1};
+		end else begin
+			irq <= irq & ~irqack;
+		end
+		irq0 <= {irq0[3:1], btn_reg[6]};
 	end
 endmodule
