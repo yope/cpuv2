@@ -49,6 +49,7 @@ module cpu(
 	reg c_reg;
 	reg z_reg;
 	reg n_reg;
+	reg i_reg;
 
 	//assign R = R[irqmode];
 	assign pc = Rr[15];
@@ -140,6 +141,7 @@ module cpu(
 					c_reg <= 0;
 					z_reg <= 1;
 					n_reg <= 0;
+					i_reg <= 1; // Start with interrupts disabled.
 					stb_o <= 0;
 					next_pc <= 0;
 					estatus <= 3'b010;
@@ -151,7 +153,7 @@ module cpu(
 				end
 
 				ST_FETCH: begin
-					if (|irqreg & !irqmode) begin
+					if (|irqreg & !irqmode & !i_reg) begin
 						// IRQ
 						irqack <= nextirq;
 						adr_o <= {27'b0, irqaddr, 2'b00};
@@ -168,7 +170,7 @@ module cpu(
 					sel_o <= 4'b1111;
 					stb_o <= 1;
 					if (ack_i) begin
-						if (|irqreg & !irqmode)
+						if (|irqreg & !irqmode & !i_reg)
 							irqmode <= 1;
 						state <= ST_DECODE;
 					end
@@ -270,6 +272,10 @@ module cpu(
 									c_reg <= estatus[2];
 									z_reg <= estatus[1];
 									n_reg <= estatus[0];
+								end
+								4'b0010: begin
+									// CLI / SEI (Clear/Set interrupt flag
+									i_reg <= imm20[0];
 								end
 								default: begin
 								end
