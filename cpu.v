@@ -10,7 +10,8 @@ module cpu(
 	output reg stb_o,
 	output reg [31:0] adr_o,
 	output reg [31:0] dat_o,
-	output reg [3:0] sel_o
+	output reg [3:0] sel_o,
+	output reg [3:0] irqack
 );
 	localparam ST_RESET =   3'b000;
 	localparam ST_FETCH =   3'b001;
@@ -37,6 +38,7 @@ module cpu(
 	wire [3:0] selbo, selbi, selho, selhi;
 	wire [31:0] datbo, datbi, datho, dathi;
 	wire [2:0] irqaddr;
+	wire [3:0] nextirq;
 
 	reg [31:0] Rr[0:15];
 	reg irqmode;
@@ -80,7 +82,8 @@ module cpu(
 	assign selho = store_addr[1] ? 4'b1100 : 4'b0011;
 	assign selhi = load_addr[1] ? 4'b1100 : 4'b0011;
 
-	assign irqaddr = irqreg[3] ? 3'b001 : irqreg[2] ? 3'b010 : irqreg[1] ? 3'b011 : 3'b100;
+	assign irqaddr = irqreg[0] ? 3'b001 : irqreg[1] ? 3'b010 : irqreg[2] ? 3'b011 : 3'b100;
+	assign nextirq = irqreg[0] ? 4'b0001 : irqreg[1] ? 4'b0010 : irqreg[2] ? 4'b0100 : 4'b1000;
 
 	function [3:0] f_selb(input [1:0] seladr);
 		case (seladr)
@@ -143,11 +146,14 @@ module cpu(
 					elr <= 32'b0;
 					epc <= 32'b0;
 					state <= ST_FETCH;
+					irqack <= 4'b0;
+					irqreg <= 4'b0000;
 				end
 
 				ST_FETCH: begin
 					if (|irqreg & !irqmode) begin
 						// IRQ
+						irqack <= nextirq;
 						adr_o <= {27'b0, irqaddr, 2'b00};
 						Rr[15] <= {27'b0, irqaddr, 2'b00};
 						epc <= next_pc; // Store next_pc
@@ -170,6 +176,7 @@ module cpu(
 
 				ST_DECODE: begin
 					irqreg <= irq; // Latch IRQ for next FETCH cycle
+					irqack <= 4'b0;
 					ir <= dat_i;
 					stb_o <= 0;
 					next_pc <= pc + 4;
