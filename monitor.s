@@ -599,6 +599,7 @@ loadhex_buffer:
 	.WORD 0
 
 main:
+	cli		# Enable interrupts
 	jsr r0, clear
 	ldi r5, 64
 	jsr r0, getc_uart
