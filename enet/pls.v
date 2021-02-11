@@ -37,7 +37,6 @@ module pls(
 						lit <= 1'b0;
 					end else begin
 						txcounter <= txcounter + 1;
-						txen <= 1'b0;
 						lit <= 1'b0;
 					end
 				end
