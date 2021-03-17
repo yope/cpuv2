@@ -4,53 +4,53 @@ import sys
 
 
 class Cpuv2Assembler:
+	condcodes = {
+		"eq": 9,
+		"ne": 8,
+		"lt": 14,
+		"gt": 12,
+		"le": 15,
+		"ge": 13,
+		"cs": 11,
+		"cc": 10
+	}
+	opcodes = {
+		"ldi": 2,
+		"ldis": 3,
+		"ldiu": 7,
+		"ldb": 4,
+		"ldh": 5,
+		"ldw": 6,
+		"stb": 8,
+		"sth": 9,
+		"stw": 10,
+		"b": 12,
+		"bdec": 13,
+		"jsr": 14,
+		"rts": 15,
+		"rti": 15,
+		"sei": 15,
+		"cli": 15
+	}
+	alucodes = {
+		"add": 0,
+		"sub": 1,
+		"adc": 2,
+		"sbc": 3,
+		"not": 4,
+		"and": 5,
+		"or": 6,
+		"xor": 7,
+		"shl": 8,
+		"shr": 9,
+		"asl": 10,
+		"asr": 11,
+		"sl4": 12,
+		"sl16": 13,
+		"sr4": 14,
+		"sr16": 15
+	}
 	def __init__(self, fname):
-		self.condcodes = {
-				"eq": 9,
-				"ne": 8,
-				"lt": 14,
-				"gt": 12,
-				"le": 15,
-				"ge": 13,
-				"cs": 11,
-				"cc": 10
-			}
-		self.opcodes = {
-				"ldi": 2,
-				"ldis": 3,
-				"ldiu": 7,
-				"ldb": 4,
-				"ldh": 5,
-				"ldw": 6,
-				"stb": 8,
-				"sth": 9,
-				"stw": 10,
-				"b": 12,
-				"bdec": 13,
-				"jsr": 14,
-				"rts": 15,
-				"rti": 15,
-				"sei": 15,
-				"cli": 15
-			}
-		self.alucodes = {
-				"add": 0,
-				"sub": 1,
-				"adc": 2,
-				"sbc": 3,
-				"not": 4,
-				"and": 5,
-				"or": 6,
-				"xor": 7,
-				"shl": 8,
-				"shr": 9,
-				"asl": 10,
-				"asr": 11,
-				"sl4": 12,
-				"sl16": 13,
-				"sr4": 14,
-				"sr16": 15
-			}
 		self.labels = {}
 		self.pc = 0
 		self.lineno = 1
@@ -66,12 +66,15 @@ class Cpuv2Assembler:
 			for l in f.readlines():
 				emit = self.parse_line(l.strip("\r\n"))
 				if emit is not None:
-					if isinstance(emit, list):
-						for x in emit:
-							print("{:08x}".format(x))
-					else:
-						print("{:08x}".format(emit))
+					self.emit(emit)
 				self.lineno += 1
+
+	def emit(self, emit):
+		if isinstance(emit, list):
+			for x in emit:
+				print("{:08x}".format(x))
+		else:
+			print("{:08x}".format(emit))
 
 	def parse_line(self, l):
 		if not len(l):
